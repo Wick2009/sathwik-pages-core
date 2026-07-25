@@ -19,24 +19,26 @@ Sprint1:
       - "GitHub Pages 1st Coding"
       - "Team Collaboration"
   2:
-    theme: "Agile Development" 
+    theme: "Scrum Agile Mini Project" 
     goals:
       - "Scrum + Standups"
       - "Kanban Boards + Burndown"
-      - "Repository Management"
-      - "Coding"
+      - "Markdown / HTML / JavaScriptChanges"
+      - "Update and Deploy Changes"
   3:
     theme: "Summative Coding Challenge"
     goals:
-      - "Code Runner Tasks"
-      - "JavaScript / Tools Tasks"
-      - "Reflect on Learning"
+      - "Complete Coding Challenge"
+      - "Debug and Test Code"
+      - "Customize and Personalize"
+      - "Present Work"
   4:
     theme: "Retrospective and Assessment"
     goals:
       - "Reflect on Sprint"
       - "Self-Assessment"
       - "Peer and Teacher Feedback"
+      - "Set Future Knowledge Goals"
 Sprint2:
   title: JavaScript Foundations & Student Teaching
   description: A key focus of this course is to make Web Games using JavaScript. Understanding fundamentals like control structures, data types, input/output, operators, classes, methods and parameters, basic inheritance, and documentation practices are essentiial. Students will be teaching lessons on these topics to their peers.  Each student will be responsible for a portion of the lesson, a popcorn hack, and homework.  Students will be graded on their teaching, the popcorn hack, and the homework they assign.  Students will also be graded on their participation in learning from their peers.
