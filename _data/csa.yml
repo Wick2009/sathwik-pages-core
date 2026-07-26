@@ -1,88 +1,4 @@
 # course illustrations
-college_board_fundamentals: &college_board_fundamentals |
-  College Board Basic Programming Units
-  -------------------------------------      
-    Fundamentals of Programming
-    +------------------+
-    | CB Unit 1        |
-    | Primitive Types  | --> Types appear in Code
-    | 2.5%-5%          |
-    +------------------+
-    +------------------+
-    | Unit 3           |
-    | Booleans and Ifs | --> Understand De Morgan's Law
-    | 15%-17.5%        |
-    +------------------+
-    +------------------+
-    | Unit 4           |
-    | Iteration        | --> String Iteration, repeat until expression
-    | 17.5%-22.5%      |
-    +------------------+
-    +------------------+
-    | Unit 10 - Part 1 |
-    | Recursion        | --> Base case and recursive call
-    | 5%-7.5%          |
-    +------------------+
-            |
-    Fundamentals of Java
-    +------------------+
-    | Unit 2           |
-    | Using Objects    | --> Instance vs Static Methods, Java and 3rd party Methods ... 
-    | 5%-7.5%          |
-    +------------------+
-    +------------------+
-    | Unit 5           |
-    | Writing Classes  | --> Diagram a Class, constructor, setters, ... 
-    | 5%-7.5%          |
-    +------------------+
-    +------------------+
-    | Unit 9           |
-    | Inheritance      | --> Extend class, polymorphism, super, this, ...
-    | 5%-7.5%          |
-    +------------------+
-  
-data_structures: &data_structures |
-  Required Data Structures for Course
-  -----------------------------------
-    College Board Units
-    +------------------+
-    | Unit 6           |
-    | Array            | --> Linear data structure, fixed size, algos, ...
-    | 5%-7.5%          |
-    +------------------+
-    +------------------+
-    | Unit 7           |
-    | ArrayList        | --> Linear and dynamic size, Collection Framework 
-    | 2.5%-7.5%        |
-    +------------------+
-    +------------------+
-    | Unit 8           |
-    | 2D Array         | --> 2D Linear data structure, col/row order
-    | 7.5%-10%         |
-    +------------------+
-    +------------------+
-    | Unit 10 - Part 2 |
-    | Search/Sort      | --> Bubble, Selection, Insertion, Merge
-    | 5%-7.5%          |
-    +------------------+
-            |            
-    College Articulated Requirements, B or better
-    +------------------+
-    | Java Fundamental |
-    | HashMap          | --> Key-value data structure
-    |                  |
-    +------------------+
-    +------------------+
-    | Algorithmic      |
-    | Queue,Stack,...  | --> Collections Framework
-    |                  |
-    +------------------+
-    +--------------------+
-    | Abstract Data Type |
-    | Graph              | --> Nodes, Vertices, Edges
-    |                    |
-    +--------------------+
-
 frq_types: &frq_types |
   Required FRQ Types by College Board
   -----------------------------------
@@ -90,22 +6,22 @@ frq_types: &frq_types |
   +--------------------+
   | Methods and        |
   | Control Structures | -->  Algoritmic challenge, use objects, call methods, ...
-  | Units #1-#4        |
+  | Units #1           |
   +--------------------+
   +--------------------+
   | Classes            |
   |                    | -->  Define a new type by creating a class ...
-  | Units #2,#5,#9     |
+  | Units #2           |
   +--------------------+
   +--------------------+
   | Arrays /           |
   | ArrayLists         | -->  Create, manipulate elements in 1D array or ArrayList, ...
-  | Units #6,#7        |
+  | Units #3           |
   +--------------------+
   +--------------------+
   | 2D Array           |
   |                    | -->  Create, traverse, and manipulate elements in 2D array, ...
-  | Units #6,#7        |
+  | Units #4           |
   +--------------------+
 
 web_dev_layers: &web_dev_layers |
@@ -143,47 +59,50 @@ web_dev_layers: &web_dev_layers |
 
 # CSA course meta data
 Sprint1:
-  shared: "Onboarding"
+  title: Java / Spring Onboarding 
+  description: In this Sprint, students will become familiar with Java types, booleans, iteration, recursion, using, and writing objects. Student teaching labs will introduce AP-required aspects of Java while learning the Spring Framework. This will teach key Java concepts while learning JWT login system, a Rest Controller, Plain Old Java Objects (POJOs), Object Relational Model (ORM), and Java Persistence API (JPA).
   start: 0
   end: 4
   0:
-    theme: "Onboarding & Java Readiness"
+    theme: "Onboarding & Readiness"
     goals:
-      - "Environment Setup"
+      - "Tool Setup"
       - "Scrum Habits"
-      - "Student Teaching Prep"
-  1:
-    theme: "Framework for Sprints"
-    goals:
-      - "Agile Methodologies"
-      - "Tools & Equipment"
-      - "Onboarding Adventure"
-  2:
-    theme: "Developer Toolchain"
-    goals:
-      - "Python/Flask Backend Infograph"
       - "Portfolio Foundations"
-  3:
-    theme: "Java / Spring Kickoff"
+  1:
+    theme: "AP Lesson Prep"
     goals:
-      - "Transition to Full Stack"
-      - "Sprint 2 Planning"
-  4:
-    theme: "Spring Web Development"
+      - "MCQ Topics"
+      - "Lesson Planning"
+      - "Teaching Schedule"
+  2:
+    theme: "Java / Spring Basics"
     goals:
       - "Anatomy of a Spring Boot Project"
       - "REST Controllers"
-      - "JWT Auth Concepts"
+      - "ThymeLeaf Concepts"
+  3:
+    theme: "Java / Spring Challenge"
+    goals:
+      - "Spring MVC Hack"
+      - "Complete Coding Challenge"
+      - "Present Work"
+  4:
+    theme: "Retrospective and Assessment"
+    goals:
+      - "Reflect on Sprint"
+      - "Self-Assessment"
+      - "Peer and Teacher Feedback"
+      - "Set Future Knowledge Goals"
 Sprint2:
   title: Java / Spring Web Development
-  description: Students will master the Fundamentals of Java Programming using the Spring Framework. In this Sprint, students will become familiar with Java types, booleans, iteration, recursion, using, and writing objects. Student teaching labs will introduce AP-required aspects of Java while learning the Spring Framework. This will teach key Java concepts while using a JWT login system, a Rest Controller, Plain Old Java Objects (POJOs), Object Relational Model (ORM), and Java Persistence API (JPA).
-  illustration: *college_board_fundamentals
+  description: Students will master the Fundamentals of Java Programming using the Spring Framework. 
+  illustration: *web_dev_layers
   start: 5
   end: 8
 Sprint3:
   title: Team Project for N@tM
   description: In this Sprint, students will continue to become familiar with Java development as they immerse themselves in  Web Development using the Spring Framework. Coding will focus on RESTful APIs, receiving requests, working with data using SQLite, and responding to requests.  Students will pick a Full Stack Web Development project, and work in teams to build it out, including all layers, and how to use ThymeLeaf to create an Admin UI.  The goal is to have the project working and deployed on AWS by the end of this Sprint.
-  illustration: *web_dev_layers
   start: 9
   end: 12
 Sprint4:
