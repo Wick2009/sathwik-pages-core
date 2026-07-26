@@ -1,6 +1,6 @@
 ---
 layout: post
-courses: {'csse': {'week': 2}, 'csp': {'week': 2}, 'csa': {'week': 1}}
+courses: {'csse': {'week': 2}, 'csp': {'week': 2}, 'csa': {'week': 0}}
 canonical_id: sprints-home
 tailwind: True
 title: GitHub Pages (index.md)

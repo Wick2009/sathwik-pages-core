@@ -3,7 +3,7 @@ layout: post
 title: Fullstack Development (Student Thinking)
 description: A reminder and guide to full stack development, aka learn how to do everyone job
 type: coding 
-courses: {'csa': {'week': 3}}
+courses: {'csa': {'week': 1}}
 permalink: /fullstack/java/intro
 toc: True
 comments: True

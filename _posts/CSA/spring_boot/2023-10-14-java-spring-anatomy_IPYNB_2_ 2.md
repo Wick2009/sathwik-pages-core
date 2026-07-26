@@ -5,7 +5,7 @@ description: A discussion of key elements in a Java Spring Boot backend project.
 categories: ['Java Spring']
 permalink: /java/spring/anatomy
 menu: nav/java_spring.html
-courses: {'csa': {'week': 4}}
+courses: {'csa': {'week': 2}}
 type: coding 
 ---
 

@@ -1,6 +1,6 @@
 ---
 layout: post 
-courses: {'csa':  {'week': 5}}
+courses: {'csa':  {'week': 1}}
 title: CSA MCQ Lessons
 search_exclude: true
 permalink: /csa/mcq
