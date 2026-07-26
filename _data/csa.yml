@@ -59,7 +59,7 @@ web_dev_layers: &web_dev_layers |
 
 # CSA course meta data
 Sprint1:
-  title: Java / Spring Onboarding 
+  title: Java Onboarding 
   description: In this Sprint, students will become familiar with Java types, booleans, iteration, recursion, using, and writing objects. Student teaching labs will introduce AP-required aspects of Java while learning the Spring Framework. This will teach key Java concepts while learning JWT login system, a Rest Controller, Plain Old Java Objects (POJOs), Object Relational Model (ORM), and Java Persistence API (JPA).
   start: 0
   end: 4
@@ -70,21 +70,21 @@ Sprint1:
       - "Scrum Habits"
       - "Portfolio Foundations"
   1:
-    theme: "AP Lesson Prep"
+    theme: "AP Introduction"
     goals:
-      - "MCQ Topics"
+      - "MCQ Topics - Weekly"
       - "Lesson Planning"
       - "Teaching Schedule"
   2:
     theme: "Java / Spring Basics"
     goals:
       - "Anatomy of a Spring Boot Project"
-      - "REST Controllers"
+      - "REST, JPA, ORM, POJO"
       - "ThymeLeaf Concepts"
   3:
     theme: "Java / Spring Challenge"
     goals:
-      - "Spring MVC Hack"
+      - "Spring MVC/Admin Hack"
       - "Complete Coding Challenge"
       - "Present Work"
   4:
@@ -95,8 +95,8 @@ Sprint1:
       - "Peer and Teacher Feedback"
       - "Set Future Knowledge Goals"
 Sprint2:
-  title: Java / Spring Web Development
-  description: Students will master the Fundamentals of Java Programming using the Spring Framework. 
+  title: Java / Spring Full Stack Web Development
+  description: Students will master Frontend to Backend Programming using the Java/Spring Framework. 
   illustration: *web_dev_layers
   start: 5
   end: 8
@@ -114,7 +114,7 @@ Sprint5:
   title: AP Java FRQ Topics & OCS Platform Enhancement
   description: In this Sprint, students will master AP CSA Java requirements by teaching a selected topic to their peers and building or improving features on the Open Coding Society (OCS) platform. Required topics include Methods & Control Structures, Arrays, ArrayLists, Classes, 2D Arrays, Searching, and Sorting. Each student will deliver a lesson on their chosen topic, complete coding hacks from other groups' topics, and contribute to OCS features for student tracking and feedback. Teaching and platform work are integrated, with all students demonstrating mastery through both instruction and hands-on development.
   start: 17
-  end: 19
+  end: 20 
   17:
     theme: "Prep and OCS Requirements"
     goals:
@@ -122,34 +122,33 @@ Sprint5:
       - "Define Lesson, HW Standards"
       - "Develop OCS Features"
   18:
-    theme: "Prototype Teaching"
+    theme: "Peer Teaching"
     goals:
       - "Present 1-Topic (prototype)"
       - "Grading/Feedback 1-Topic"
-      - "Provide OCS Feedback"
+      - "Provide Feedback"
       - "Revise OCS Features"
   19:
-    theme: "Teaching the Right Way"
+    theme: "Final Teaching"
     goals:
       - "Present 4-Topics (final)"
-      - "Record Student Data"
+      - "Assign Student Assessment"
+      - "Capture Preliminary Student Data in OCS"
+  20:
+    theme: "Summative Assessment"
+    goals:
       - "Analyze Student Data"
+      - "Capture Final Student Data in OCS"
+      - "Present to Teacher"
 Sprint6:
   title: Passion Project or OCS Enhancement & N@tM Feedback
   description: In this Sprint, students may choose to continue enhancing the OCS platform or propose and prototype a new project based on their interests and skills. The focus is on creativity, design, and technical growth—whether through OCS development or a new passion project. Students should document their design process, make technical decisions, and present their work for peer and instructor feedback. Consider frontend design, database modeling, API plans, JWT designs, big data solutions, and future usefulness. Weekly live reviews and feedback will support project evolution.
-  start: 20
+  start: 21
   end: 24
-  20:
-    theme: "Passion Project Ideation"
-    goals:
-      - "Present 3-Topics (final)"
-      - "Project Ideation"
-      - "Research Technologies"
-      - "Checkpoint Ideation"
   21:
     theme: "Design Checkpoint"
     goals:  
-      - "Project Kanban"
+      - "Research Technologies"
       - "Database Models (draw.io)"
       - "Frontend UI/UX (html/css)"
       - "API Basics (postman)"
