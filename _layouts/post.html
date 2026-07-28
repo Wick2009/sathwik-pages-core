@@ -19,9 +19,9 @@ Check if this is a course lesson and determine which course context to use
 {% elsif page.courses.csse %}
 {% assign current_course = 'csse' %}
 {% assign current_week = page.courses.csse.week | plus: 0 %}
-{% elsif page.courses.cwgu %}
-{% assign current_course = 'cwgu' %}
-{% assign current_week = page.courses.cwgu.week | plus: 0 %}
+{% elsif page.courses.csh %}
+{% assign current_course = 'csh' %}
+{% assign current_week = page.courses.csh.week | plus: 0 %}
 {% endif %}
 
 {% if current_course != null and current_week != null %}
