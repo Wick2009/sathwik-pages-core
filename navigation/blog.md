@@ -1,7 +1,7 @@
 ---
 layout: blogs 
 title: Blogs
-description: This page contains reference materials, learning resources, and course content for Computer Science Education programs including CSSE, AP Computer Science Principles, and AP Computer Science A.
+description: This page contains reference materials, learning resources, and course content for Computer Science Education programs including CSSE, AP Computer Science Principles, AP Computer Science A, and Computer Science Honors.
 search_exclude: true
 permalink: /navigation/blogs/
 ---
@@ -17,6 +17,7 @@ permalink: /navigation/blogs/
             <td><a href="{{site.baseurl}}/navigation/courses/csse">CSSE</a></td>
             <td><a href="{{site.baseurl}}/navigation/courses/csp">APCSP</a></td>
             <td><a href="{{site.baseurl}}/navigation/courses/csa">APCSA</a></td>
+            <td><a href="{{site.baseurl}}/navigation/courses/csh">CSH</a></td>
         </tr>
     </table>
 </div>
@@ -35,6 +36,7 @@ permalink: /navigation/blogs/
                         <td><a href="{{site.baseurl}}/navigation/courses/csse">CSSE</a></td>
                         <td><a href="{{site.baseurl}}/navigation/courses/csp">APCSP</a></td>
                         <td><a href="{{site.baseurl}}/navigation/courses/csa">APCSA</a></td>
+                        <td><a href="{{site.baseurl}}/navigation/courses/csh">CSH</a></td>
                     </tr>
                 </table>
             `;
@@ -62,7 +64,8 @@ permalink: /navigation/blogs/
             const courseMap = {
                 'CSSE': { name: 'CSSE', url: '{{site.baseurl}}/navigation/courses/csse' },
                 'CSP': { name: 'APCSP', url: '{{site.baseurl}}/navigation/courses/csp' },
-                'CSA': { name: 'APCSA', url: '{{site.baseurl}}/navigation/courses/csa' }
+                'CSA': { name: 'APCSA', url: '{{site.baseurl}}/navigation/courses/csa' },
+                'CSH': { name: 'CSH', url: '{{site.baseurl}}/navigation/courses/csh' }
             };
 
             let tableHTML = '<table style="width:100%; text-align:center;"><tr>';

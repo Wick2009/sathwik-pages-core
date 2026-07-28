@@ -212,6 +212,8 @@ generate-makefiles:
 # Build all registered projects (game assets, not docs)
 build-registered-projects:
 	$(call run_projects,$(ALL_PROJECTS),Building,build)
+	@echo "Generating dynamic SASS imports..."
+	@$(PYTHON) scripts/generate_sass_imports.py
 
 build-dev-projects:
 	@echo "Active DEV Projects: $(ACTIVE_DEV_PROJECTS)"

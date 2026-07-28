@@ -15,6 +15,8 @@ menu:
     url: /navigation/courses/csp/
   - title: CSA
     url: /navigation/courses/csa/
+  - title: CSH
+    url: /navigation/courses/csh/
   - title: Blog
     url: /navigation/blogs/
   - title: Search
@@ -94,4 +96,3 @@ plugins:
   - jekyll-remote-theme
   - jekyll-include-cache
 
-  

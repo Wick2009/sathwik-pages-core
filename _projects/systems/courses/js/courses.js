@@ -37,7 +37,8 @@ const ITEM_PRIORITY_KEY = `item_priorities_${window.location.pathname}`;
 const COURSE_LABELS = {
   csp: 'Computer Science Principles',
   csa: 'Computer Science A',
-  csse: 'Computer Science and Software Engineering'
+  csse: 'Computer Science and Software Engineering',
+  csh: 'Computer Science Honors'
 };
 
 let currentModalWeekNumber = null;
@@ -1222,4 +1223,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
   console.log('Sprint page initialized successfully');
 });
-

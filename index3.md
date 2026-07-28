@@ -58,10 +58,21 @@ sections:
       left: 200
       title: CSA Detail
       content: "AP Computer Science A: Java, data structures, recursion, team projects, AP prep."
+  - id: hotspot-csh
+    label: CSH
+    hotspot:
+      top: 640
+      left: 40
+    detail:
+      id: section-csh
+      top: 640
+      left: 200
+      title: CSH Detail
+      content: "Computer Science Honors: advanced programming, algorithms, data structures, and honors projects."
 ---
 
 <!-- Container for Sprite and hotspots/details -->
-<div id="game-area" style="position: relative; width: 400px; height: 700px; margin: 60px auto;">
+<div id="game-area" style="position: relative; width: 400px; height: 900px; margin: 60px auto;">
   <!-- Sprite -->
   <p id="sprite" class="sprite"></p>
 
@@ -83,7 +94,7 @@ sections:
 #game-area {
   position: relative;
   width: 400px;
-  height: 700px;
+  height: 900px;
   margin: 60px auto;
   background: #55595dff;
   border-radius: 16px;
