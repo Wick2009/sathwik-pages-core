@@ -1183,6 +1183,7 @@ active_tab: profile
         if (currentUserClasses.includes('CSP')) {
             if (!currentUserClasses.includes('CSSE')) newClass = 'CSSE';
             else if (!currentUserClasses.includes('CSA')) newClass = 'CSA';
+            else if (!currentUserClasses.includes('CSH')) newClass = 'CSH';
             else {
                 alert('All available classes have been added.');
                 return;
