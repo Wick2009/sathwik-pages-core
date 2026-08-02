@@ -63,7 +63,7 @@ _projects/*/*/Makefile
 _posts/projects/
 
 # Post generations
-_posts/**/*_cwgu.md
+_posts/**/*_csh.md
 _posts/**/*_content.md
 
 # Multiple formats of the same content (auto-generated)
@@ -75,7 +75,7 @@ _posts/**/*_cwgu.md
 _notebooks/**/*_csp.ipynb
 _notebooks/**/*_csa.ipynb
 _notebooks/**/*_csse.ipynb
-_notebooks/**/*_cwgu.ipynb
+_notebooks/**/*_csh.ipynb
 _notebooks/**/*_content.md
 
 # remove all the .scss cache files

@@ -9,6 +9,9 @@ header:
       en: CSA
     url: /navigation/courses/csa/
   - titles:
+      en: CSH
+    url: /navigation/courses/csh/
+  - titles:
       en: Blog
     url: /navigation/blogs/
   - titles:

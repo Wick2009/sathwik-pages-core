@@ -41,7 +41,8 @@ permalink: /navigation/courses/
             const courseMap = {
                 'CSSE': { name: 'CSSE', url: '{{site.baseurl}}/navigation/courses/csse' },
                 'CSP': { name: 'APCSP', url: '{{site.baseurl}}/navigation/courses/csp' },
-                'CSA': { name: 'APCSA', url: '{{site.baseurl}}/navigation/courses/csa' }
+                'CSA': { name: 'APCSA', url: '{{site.baseurl}}/navigation/courses/csa' },
+                'CSH': { name: 'CSH', url: '{{site.baseurl}}/navigation/courses/csh' }
             };
 
             let tableHTML = '<table style="width:100%; text-align:center;"><tr>';

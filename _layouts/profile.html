@@ -1165,6 +1165,7 @@ active_tab: profile
                             <option value="CSSE" ${classAbbr === 'CSSE' ? 'selected' : ''}>Computer Science and Software Engineering</option>
                             <option value="CSP" ${classAbbr === 'CSP' ? 'selected' : ''}>Computer Science Principles</option>
                             <option value="CSA" ${classAbbr === 'CSA' ? 'selected' : ''}>Computer Science A</option>
+                            <option value="CSH" ${classAbbr === 'CSH' ? 'selected' : ''}>Computer Science Honors</option>
                         </select>
                     </div>
                 </div>
@@ -1182,6 +1183,7 @@ active_tab: profile
         if (currentUserClasses.includes('CSP')) {
             if (!currentUserClasses.includes('CSSE')) newClass = 'CSSE';
             else if (!currentUserClasses.includes('CSA')) newClass = 'CSA';
+            else if (!currentUserClasses.includes('CSH')) newClass = 'CSH';
             else {
                 alert('All available classes have been added.');
                 return;

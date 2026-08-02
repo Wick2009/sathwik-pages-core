@@ -1,11 +1,11 @@
 # Courses/Sprint System
 
-Unified courses and sprint timeline system managing CSP, CSA, CSSE, CWGU, and future CSH courses.
+Unified courses and sprint timeline system managing CSP, CSA, CSSE, CSH, and future CSH courses.
 
 ## Overview
 
 The courses system provides:
-- **Multiple Course Entry Points**: CSP, CSA, CSSE, CWGU course pages with sprint timelines
+- **Multiple Course Entry Points**: CSP, CSA, CSSE, CSH course pages with sprint timelines
 - **Completion Tracking**: Persistent localStorage tracking for items and priorities
 - **Progress Visualization**: Week and sprint-level progress bars with statistics
 - **Certificate System**: Week-based certificate generation tied to completion
@@ -22,8 +22,7 @@ _projects/systems/courses/
 │   ├── csp.md          # Computer Science Principles
 │   ├── csa.md          # Computer Science A  
 │   ├── csse.md         # Computer Science & Software Engineering
-│   ├── cwgu.md         # CyberWarriors Gaming University (legacy)
-│   └── cwgu2.md        # CyberWarriors Gaming University (current)
+│   ├── csh.md         # Computer Science Honors
 ├── _includes/           # Sprint layout components (source)
 │   ├── sprint-card.html
 │   ├── sprint-item-card.html
@@ -163,7 +162,7 @@ const COURSE_LABELS = {
   csp: 'Computer Science Principles',
   csa: 'Computer Science A',
   csse: 'Computer Science and Software Engineering',
-  cwgu: 'CyberWarriors Gaming University'
+  csh: 'Computer Science Honors'
 };
 ```
 

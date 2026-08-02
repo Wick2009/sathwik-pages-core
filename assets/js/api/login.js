@@ -160,7 +160,8 @@ async function updateNavigation(isLoggedIn) {
         const courseMap = {
             'CSSE': { name: 'CSSE', url: `${baseurl}/navigation/courses/csse` },
             'CSP': { name: 'APCSP', url: `${baseurl}/navigation/courses/csp` },
-            'CSA': { name: 'APCSA', url: `${baseurl}/navigation/courses/csa` }
+            'CSA': { name: 'APCSA', url: `${baseurl}/navigation/courses/csa` },
+            'CSH': { name: 'CSH', url: `${baseurl}/navigation/courses/csh` }
         };
 
         // Filter to valid courses only

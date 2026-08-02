@@ -1,0 +1,41 @@
+# CSH course meta data
+Sprint1:
+  title: "Problem Definition & Agile Initialization"
+  description: >
+    Part 1, Iteration 1: Foundation & Proof of Concept. Teams form, define a
+    validated engineering problem, and initialize the Agile/project-management
+    practices (Kanban board, portfolio, IP research) that carry through the
+    Capstone. Sprint closes with a finished PRD and a signed mentor agreement.
+  help: "/navigation/sprint1-help"
+  start: 0
+  end: 4
+  0:
+    theme: "Team Formation & Agile Initialization"
+    goals:
+      - "Form Teams of 2-3 (Wayfinding Game + Tooling)"
+      - "Draft Preliminary Abstract"
+      - "Initialize GitHub Repo / Kanban Board (Projects or Jira)"
+  1:
+    theme: "Instructional Problem & Requirements Analysis"
+    goals:
+      - "Instructional Problem, Current & Desired State KSAs"
+      - "Gap Analysis + Research Questions"
+      - "Team Norms & Technical Ownership Roles"
+  2:
+    theme: "Literature Review & Research Depth"
+    goals:
+      - "Review 3+ Existing Commercial/Open-Source/Academic Solutions"
+      - "Research Topic Importance & Purpose"
+      - "Industry Mentor Requirements-Gathering Interview"
+  3:
+    theme: "Design Specifications & Ethics"
+    goals:
+      - "Product Requirements Document (PRD) w/ Quantified Metrics"
+      - "Patent & Open-Source License Search (MIT, GPL, Apache)"
+      - "Problem Statement Backed by Data/Market Research"
+  4:
+    theme: "Portfolio Setup & Sprint 1 Defense"
+    goals:
+      - "Initialize Engineering Portfolio"
+      - "Signed Mentor Agreement Form"
+      - "Finalize PRD + Sprint 1 Assessment Matrix Review"
