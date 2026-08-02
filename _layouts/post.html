@@ -784,9 +784,9 @@ Check if this is a course lesson and determine which course context to use
           'Content-Type': 'application/x-www-form-urlencoded'
         },
         body: new URLSearchParams({
-          name: PAGE_TITLE || '{{ page.title }}',
+          name: PAGE_TITLE || {{ page.title | jsonify }},
           contentUrl: CURRENT_LESSON_ID,
-          description: '{{ page.description | default: "" }}'
+          description: {{ page.description | default: "" | jsonify }}
         })
       });
       

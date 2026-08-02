@@ -3,7 +3,7 @@ layout: sprint
 show_reading_time: false
 feedback: true
 title: Computer Science Honors
-units: "1"
+units: "1,2,3,4,5,6"
 search_exclude: true
 course: csh
 permalink: /navigation/courses/csh/
