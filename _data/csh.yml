@@ -1,7 +1,9 @@
 # CSH course meta data
 Sprint1:
   title: "Problem Definition & Agile Initialization"
+  edp_phases: "Phases 1-2: Define Problem, Generate Concepts"
   description: >
+    Engineering Design Process: Phases 1-2 — Define Problem, Generate Concepts.
     Part 1, Iteration 1: Foundation & Proof of Concept. Teams form, define a
     validated engineering problem, and initialize the Agile/project-management
     practices (Kanban board, portfolio, IP research) that carry through the
@@ -43,7 +45,9 @@ Sprint1:
       - "Set Future Knowledge Goals"
 Sprint2:
   title: "System Architecture & MVP Construction"
+  edp_phases: "Phases 3-4: Develop Solution, Construct and Test"
   description: >
+    Engineering Design Process: Phases 3-4 — Develop Solution, Construct and Test.
     Sketch and weigh competing architecture designs, map APIs/data flow/CAD
     before building, audit feasibility and Bill of Materials, then build a
     working Minimum Viable Product and log its first test results against the
@@ -52,7 +56,9 @@ Sprint2:
   end: 8
 Sprint3:
   title: "Alpha Evaluation & Trimester 1 Defense"
+  edp_phases: "Phases 5-6: Evaluate Solution, Present Solution"
   description: >
+    Engineering Design Process: Phases 5-6 — Evaluate Solution, Present Solution.
     Demo the MVP to your industry mentor and target users for structured
     feedback, run a post-mortem on technical debt and bugs, finalize the
     Sprint 1-3 engineering portfolio, and defend the Alpha prototype to an
@@ -61,7 +67,10 @@ Sprint3:
   end: 12
 Sprint4:
   title: "Failure Analysis & Architectural Redesign"
+  edp_phases: "Phases 1-2 (Iteration 2): Define Problem, Generate Concepts"
   description: >
+    Engineering Design Process: Phases 1-2, second pass — Define Problem,
+    Generate Concepts, revisited in light of Trimester 1 results.
     Log Trimester 1 failures and pivots in a version-controlled changelog,
     build an FMEA risk matrix with your mentor, root-cause the Sprint 3
     issues, and revise the PRD to stricter, industry-grade specifications.
@@ -69,7 +78,10 @@ Sprint4:
   end: 16
 Sprint5:
   title: "High-Fidelity Engineering & Stress Testing"
+  edp_phases: "Phases 3-4 (Iteration 2): Develop Solution, Construct and Test"
   description: >
+    Engineering Design Process: Phases 3-4, second pass — Develop Solution,
+    Construct and Test, at production fidelity.
     Build the Beta prototype with production-grade practices, fully integrate
     all sub-systems, cost out manufacturing/hosting at scale, and run
     edge-case, load, and regulatory-compliance testing with comparative data
@@ -78,7 +90,10 @@ Sprint5:
   end: 20
 Sprint6:
   title: "Validation, Deployment & Capstone Defense"
+  edp_phases: "Phases 5-6 (Iteration 2): Evaluate Solution, Present Solution"
   description: >
+    Engineering Design Process: Phases 5-6, second pass — Evaluate Solution,
+    Present Solution, for the Capstone's final defense.
     Run user acceptance testing with external participants, write the final
     engineering assessment and future roadmap, package the technical
     portfolio (repo, docs, testing logs), and deliver the venture-style
