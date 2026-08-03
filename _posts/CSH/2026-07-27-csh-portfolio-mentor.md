@@ -1,29 +1,32 @@
 ---
 layout: post
-title: Portfolio Setup, Mentor Agreement & Sprint 1 Review
+title: Mentor Engagement, Feasibility Review & Portfolio Setup
 description: >
-  Initialize your engineering portfolio, finalize your signed mentor
-  agreement, and check your team's progress against the Sprint 1 Assessment Matrix.
-courses: {'csh': {'week': 4}}
+  Bring your revised PRD to your industry mentor for a feasibility review,
+  finalize the signed mentor agreement, and initialize your engineering
+  portfolio.
+courses: {'csh': {'week': 3}}
 assignment: true
 type: capstone
 canonical_id: csh-portfolio-mentor
 author: PLTW Capstone
 ---
 
-## Week 4: Portfolio Setup & Sprint 1 Defense
+## Week 3: Mentor Engagement & Feasibility Review
+
+### Mentor Feasibility Review
+Bring your peer-reviewed problem statement and PRD to your industry mentor.
+This is not just a signature — walk through it deliverable by deliverable:
+
+- Is each PRD metric actually measurable with the tools/time your team has?
+- Are there feasibility risks (cost, complexity, timeline) the mentor sees
+  that your team missed?
+- What would the mentor prioritize first if they were building this?
+
+Log the mentor's feedback and update your PRD/problem statement based on it
+before Sprint 2 begins.
 
 ### Core Deliverables
-- GitHub repository / Project board set up and in active use.
-- Finished Product Requirements Document (PRD).
 - Signed mentor agreement form.
-
-### Sprint 1 Assessment Matrix
-| Benchmark | Weight |
-|---|---|
-| Problem statement validity | 25% |
-| Quantified design specifications | 25% |
-| Industry research depth | 25% |
-| Agile sprint setup | 25% |
-
-Review your team's Kanban board, portfolio, and PRD against these benchmarks before moving into Sprint 2.
+- GitHub repository / Project board set up and in active use.
+- Engineering portfolio initialized with Weeks 0-3 artifacts.

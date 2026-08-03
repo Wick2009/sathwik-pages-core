@@ -28,12 +28,21 @@
   </div>
 
   <div class="sprint-nav">
-    {% assign courseData = site.data[current_course] %}
-    {% for i in (1..9) %}
-      {% assign sprintKey = "Sprint" | append: i %}
-      {% assign sprint = courseData[sprintKey] %}
+    {%- assign courseData = site.data[current_course] -%}
 
-      {% if sprint %}
+    {%- comment -%} Filter to this course's single-course posts once, instead of rescanning all site posts per week. {%- endcomment -%}
+    {%- assign coursePosts = "" | split: "" -%}
+    {%- for post in posts -%}
+      {%- if post.courses[current_course] and post.courses.size == 1 -%}
+        {%- assign coursePosts = coursePosts | push: post -%}
+      {%- endif -%}
+    {%- endfor -%}
+
+    {%- for i in (1..9) -%}
+      {%- assign sprintKey = "Sprint" | append: i -%}
+      {%- assign sprint = courseData[sprintKey] -%}
+
+      {%- if sprint -%}
       <div class="sprint-section">
         <button class="sprint-toggle" onclick="toggleSprint('{{ i }}')" type="button">
           <i class="fas fa-chevron-right sprint-chevron" id="chevron-{{ i }}"></i>
@@ -44,30 +53,22 @@
         </button>
 
         <div class="lesson-list" id="sprint-{{ i }}-lessons" style="display: none;">
-          {% for week in (sprint.start..sprint.end) %}
-            {% for post in posts %}
-              {% if post.courses[current_course] %}
-                {% assign course_count = 0 %}
-                {% for course in post.courses %}
-                  {% assign course_count = course_count | plus: 1 %}
-                {% endfor %}
-                {% if course_count == 1 %}
-                  {% assign postWeek = post.courses[current_course].week | plus: 0 %}
-                  {% if postWeek == week %}
-                  <a href="{{ site.baseurl }}{{ post.url }}" 
-                     class="lesson-item {% if page.url == post.url %}active{% endif %}"
-                     data-lesson-id="{{ post.url }}">
-                    <i class="fas fa-circle lesson-status-icon incomplete"></i>
-                    <span class="lesson-title">{{ post.title }}</span>
-                  </a>
-                  {% endif %}
-                {% endif %}
-              {% endif %}
-            {% endfor %}
-          {% endfor %}
+          {%- for week in (sprint.start..sprint.end) -%}
+            {%- for post in coursePosts -%}
+              {%- assign postWeek = post.courses[current_course].week | plus: 0 -%}
+              {%- if postWeek == week -%}
+              <a href="{{ site.baseurl }}{{ post.url }}"
+                 class="lesson-item {% if page.url == post.url %}active{% endif %}"
+                 data-lesson-id="{{ post.url }}">
+                <i class="fas fa-circle lesson-status-icon incomplete"></i>
+                <span class="lesson-title">{{ post.title }}</span>
+              </a>
+              {%- endif -%}
+            {%- endfor -%}
+          {%- endfor -%}
         </div>
       </div>
-      {% endif %}
-    {% endfor %}
+      {%- endif -%}
+    {%- endfor -%}
   </div>
 </div>
