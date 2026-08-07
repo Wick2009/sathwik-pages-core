@@ -26,6 +26,12 @@ Answer and draft the following sections for your team's engineering portfolio (s
   - **RQ2 — Support and Progress**
 - **Research Purpose** — What will answering these questions accomplish?
 
+### Justification Evidence
+A problem statement is only as strong as its evidence. Gather all three of the following before finalizing your problem statement — this is what "Justification" means for Element A, and it's the piece most teams skip:
+- **Expert Interviews** — Talk to at least one person with real expertise or experience in the problem space (a teacher, industry professional, or someone directly affected). Record who you talked to and what they told you.
+- **Consumer / Stakeholder Surveys** — Run a short survey of the people who would actually use or be affected by your solution. Even 10-15 responses is enough to surface real signal.
+- **Scholarly Articles** — Cite research (not just blog posts) that backs up why this problem matters and what's already known about it.
+
 ### Team Norms & Roles
 - Establish team norms and allocate individual technical ownership roles.
 - Conduct an initial requirements-gathering interview with an industry mentor.

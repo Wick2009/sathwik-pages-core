@@ -87,7 +87,7 @@ Sprint3:
   edp_phases: "Phases 5-6: Evaluate Solution, Present Solution"
   description: >
     Engineering Design Process: Phases 5-6 — Evaluate Solution, Present Solution.
-    Covers PLTW Elements H-L. Demo the MVP to your industry mentor and target
+    Covers PLTW Elements H-M. Demo the MVP to your industry mentor and target
     users for structured feedback, run a post-mortem on technical debt and
     bugs, finalize the Sprint 1-3 engineering portfolio, and defend the Alpha
     prototype at the Night at the Museum (N@tM) showcase. Second mentor
@@ -115,11 +115,11 @@ Sprint3:
       - "Individual + Team Reflection on Trimester 1"
       - "Finalize Sprint 1-3 Engineering Portfolio"
   12:
-    theme: "Element L: Presentation of Designer's Recommendations"
+    theme: "Elements L+M: Recommendations & N@tM Portfolio Defense"
     goals:
-      - "Draft Recommendations for Next Design Iteration"
-      - "Finalize Electronic Portfolio & Multimedia Display"
-      - "Night at the Museum (N@tM): Defend Alpha Prototype to Evaluation Panel"
+      - "Element L: Draft Recommendations for Next Design Iteration"
+      - "Element M: Finalize Electronic Portfolio & Multimedia Display"
+      - "Element M: Night at the Museum (N@tM) — Defend Alpha to Judging Panel"
 Sprint4:
   title: "Failure Analysis & Architectural Redesign"
   edp_phases: "Phases 1-2 (Iteration 2): Define Problem, Generate Concepts"
@@ -201,7 +201,8 @@ Sprint6:
     Elements H-L. Run user acceptance testing with external participants,
     write the final engineering assessment and future roadmap, package the
     technical portfolio (repo, docs, testing logs), and deliver the
-    venture-style Capstone expo defense to an external panel.
+    venture-style Capstone expo defense to an external panel. Revisits PLTW
+    Elements H-M.
   start: 21
   end: 24
   21:
@@ -223,8 +224,8 @@ Sprint6:
       - "Draft the Future Roadmap Beyond Capstone"
       - "Individual + Team Reflection Across Both Iterations"
   24:
-    theme: "Element L (Iteration 2): Capstone Defense"
+    theme: "Elements L+M (Iteration 2): Final Recommendations & Capstone Defense"
     goals:
-      - "Package Final Technical Portfolio (Repo, Docs, Testing Logs)"
-      - "Finalize Venture-Style Expo Multimedia Display"
-      - "Deliver Capstone Defense to External Panel"
+      - "Element L: Final Designer's Recommendations Across Both Iterations"
+      - "Element M: Package Final Technical Portfolio (Repo, Docs, Testing Logs)"
+      - "Element M: Deliver Venture-Style Capstone Defense to Judging Panel"
