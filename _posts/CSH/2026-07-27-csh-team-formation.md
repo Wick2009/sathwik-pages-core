@@ -17,6 +17,10 @@ author: PLTW Capstone
 - Form into teams of 2 or 3 students.
 - Use the Wayfinding Game and Tooling exercise to get acquainted with your teammates and the Capstone workflow.
 
+### Brainstorm Problem Ideas
+- As a team, brainstorm broadly before narrowing — this is the "Choosing a Problem" step of the Capstone process, not a final commitment.
+- Group brainstormed ideas by theme, then vote or discuss as a team to narrow toward the 1-2 problem directions you'll investigate in Week 1.
+
 ### Draft a Preliminary Abstract
 Write a short, preliminary abstract describing the problem your team wants to investigate. Use the sample abstract below as a model for tone, structure, and scope:
 
