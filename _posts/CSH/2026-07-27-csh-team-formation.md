@@ -16,7 +16,7 @@ author: PLTW Capstone
 ### Form Your Team
 
 - Form into teams of 2 or 3 students.
-- Use the Wayfinding Game and Tooling exercise to get acquainted with your teammates and the Capstone workflow.
+- Use the Wayfinding Game and tooling exercise to get acquainted with your teammates and the Capstone workflow.
 
 ### Brainstorm Problem Ideas
 
@@ -39,9 +39,10 @@ Each abstract should include:
 
 ### Project Interest, Team Formation & Identity
 
-> **Start working together**
-> Use profile setup, wayfinding games, and these group challenges to learn how potential teammates think, communicate, and approach problems.
-> **Explore an area of interest**
+> **Start working together**  
+> Use profile setup, Wayfinding Game activities, and group challenges to learn how potential teammates think, communicate, and approach problems.
+>
+> **Explore an area of interest**  
 > Use the [OCS Intelligence Visual]({{site.baseurl}}/images/capstone.png) to identify an area that interests you and your potential teammates.
 
 - Student Experience
@@ -50,7 +51,7 @@ Each abstract should include:
 - Cloud Operations
 - Data Engineering
 
-> **Develop team identity**
+> **Develop team identity**  
 > Once you have begun working together, establish a team identity:
 >
 > - Team Name
@@ -58,8 +59,8 @@ Each abstract should include:
 > - Agile Manifesto / Team Norms
 > - Initial Roles
 >
-> **Create three preliminary abstracts**
-> As a team, develop three possible project directions related to your areas of interest. Do not commit to a single problem yet. Use the **Who, What, When, Where, Why, and How** questions to make each idea specific enough to investigate.
+> **Create three preliminary abstracts**  
+> As a team, develop three possible project directions related to your areas of interest. Do not commit to a single problem yet. Use the **Who, What, When, Where, and How** questions to make each idea specific enough to investigate.
 
 #### Classroom Sample Option 1 — Cognitive Load in Onboarding
 
@@ -67,7 +68,7 @@ Novice students often experience cognitive overload when starting JavaScript gam
 
 #### Classroom Sample Option 2 — Classroom Opening and Attendance
 
-In light of new cell phone restriction legislation, teachers face increased demands during the first few minutes of class managing phone collection, attendance, and student readiness. This study would examine whether automated or alternative systems can reduce classroom opening time while remaining reliable and equitable. The goal is to reduce teacher effort and student disruption while getting students ready to learn.
+In light of new cell phone restriction legislation, teachers face increased demands in the first few minutes of class managing phone collection, attendance, and student readiness. This study would examine whether automated or alternative systems can reduce classroom opening time while remaining reliable and equitable. The goal is to reduce teacher effort and student disruption while getting students ready to learn.
 
 #### Classroom Sample Option 3 — Team Selection
 
@@ -88,13 +89,13 @@ Score each abstract on a **1–4 scale** (1 = needs major revision, 4 = strong a
 
 1. Present all three abstracts to peers.
 2. Receive scores/comments for each criterion.
-3. Revise top option based on feedback.
+3. Revise the top option based on feedback.
 4. Carry one selected direction into Week 1.
 
 ### Set Up Your Project Management
 
 - Initialize a professional engineering portfolio.
-  - Add cards for all three abstract options
-  - Create a peer-review decision checkpoint summary
-  - Write a summary of decision process
+  - Add cards for all three abstract options.
+  - Create a peer-review decision checkpoint summary.
+  - Write a summary of the decision process.
 - Stand up a digital Kanban board (GitHub Projects) to log tasks, user stories, and acceptance criteria.
