@@ -1,4 +1,19 @@
 # CSH course meta data
+course:
+  code: CSH
+  title: "CSH - Computer Science Honors"
+  subtitle: "Research, Capstone"
+  mission: "Computer Science \"H\" is a 2-trimester, senior-only interdisciplinary honors course serving as the Pathway Capstone. Students complete a research, design, and coding thesis culminating in a presentation to sponsoring professionals."
+  progression_key: 20
+  learning_journey:
+    - "Capstone Project Planning"
+    - "Research & Problem Definition"
+    - "Stakeholder Engagement"
+    - "System Design & Prototyping"
+    - "Technical Documentation"
+    - "Public Presentation"
+  zone_title: "CSH Zone - Computer Science Honors"
+
 Sprint1:
   title: "Problem Discovery & Justification"
   edp_phases: "Phases 1-2: Define Problem, Generate Concepts"

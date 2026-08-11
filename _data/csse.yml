@@ -1,4 +1,19 @@
 # CSSE course meta data
+course:
+  code: CSSE
+  title: "CSSE - Software Engineering"
+  subtitle: "Games, Foundation"
+  mission: "Computer Science and Software Engineering 1,2 prepares students for the AP Computer Science pathway. This course focuses on teaching the JavaScript programming language, object-oriented programming, and developing algorithmic thinking skills through game development projects."
+  progression_key: 5
+  learning_journey:
+    - "Game Builder"
+    - "JS Fundamentals (Code Runner)"
+    - "GitHub Project and VSCode"
+    - "Game Objects"
+    - "Sprite Animation Studio"
+    - "WASD Maze Navigator"
+  zone_title: "CSSE Zone - Software Engineering Foundation"
+
 Sprint1:
   shared: "Onboarding"
   help: "/navigation/sprint1-help"  # Add help for this sprint
