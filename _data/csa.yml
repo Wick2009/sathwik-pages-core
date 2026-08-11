@@ -141,7 +141,7 @@ Sprint5:
       - "Capture Final Student Data in OCS"
       - "Present to Teacher"
 Sprint6:
-  title: Passion Project or OCS Enhancement & N@tM Feedback
+  title: OCS Enhancement & N@tM Feedback
   description: In this Sprint, students may choose to continue enhancing the OCS platform or propose and prototype a new project based on their interests and skills. The focus is on creativity, design, and technical growth—whether through OCS development or a new passion project. Students should document their design process, make technical decisions, and present their work for peer and instructor feedback. Consider frontend design, database modeling, API plans, JWT designs, big data solutions, and future usefulness. Weekly live reviews and feedback will support project evolution.
   start: 21
   end: 24
@@ -173,7 +173,7 @@ Sprint6:
       - "Instructor Feedback"
       - "Next Steps Planning"
 Sprint7: 
-  title: Data Structures and Passion Project v1.0
+  title: Data Structures using OCS Project
   description: A focus on Data Structures that relate to the AP exam. A key requirement is to make your own Algorithmic sorting video. The theme is to produce work that can help you pass the AP Exam and improve your Passion Project. Each student must cover key concepts from the Four AP FRQ types, contain a key Data Structure, and utilize Sorting.
   illustration: *data_structures
   start: 25
@@ -185,7 +185,7 @@ Sprint8:
   start: 30
   end: 33
 Sprint9:
-  title: Passion Project v2.0 and N@tM
+  title: OCS Project v2.0 and N@tM
   description: Wrap up your preferred project and data structures. There will be an opportunity to contribute and be published to the Open Coding Society. If your project is selected, then you will receive a high 'A' on the final project.
   start: 34
   end: 37
