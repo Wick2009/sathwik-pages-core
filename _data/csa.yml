@@ -72,27 +72,26 @@ Sprint1:
   1:
     theme: "AP Introduction"
     goals:
-      - "MCQ Topics - Weekly"
-      - "Lesson Planning"
-      - "Teaching Schedule"
+      - "MCQ Topics"
+      - "Lesson Building"
+      - "Mastery through Teaching"
   2:
     theme: "Java / Spring Basics"
     goals:
       - "Anatomy of a Spring Boot Project"
-      - "REST, JPA, ORM, POJO"
-      - "ThymeLeaf Concepts"
+      - "Spring Boot REST, JPA, ORM, POJO"
+      - "ThymeLeaf Coding Concepts"
   3:
-    theme: "Java / Spring Challenge"
+    theme: "Spring Boot Challenges"
     goals:
-      - "Spring MVC/Admin Hack"
-      - "Complete Coding Challenge"
-      - "Present Work"
+      - "Spring MVC/Admin UI"
+      - "Full Stack Development"
+      - "Depth through Presentation"
   4:
     theme: "Retrospective and Assessment"
     goals:
       - "Reflect on Sprint"
-      - "Self-Assessment"
-      - "Peer and Teacher Feedback"
+      - "Learn Self and Peer Assessment"
       - "Set Future Knowledge Goals"
 Sprint2:
   title: Java / Spring Full Stack Web Development
