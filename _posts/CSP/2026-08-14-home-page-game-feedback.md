@@ -8,6 +8,7 @@ description: >
   page, then open a GitHub Issue with structured feedback and submit the
   link as your assignment.
 author: Open Coding Society
+permalink: /csp/home-page-game-feedback
 ---
 
 ## Week 0: Code Runner Review — Home Page Game Feedback

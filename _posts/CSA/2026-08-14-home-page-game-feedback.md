@@ -8,6 +8,7 @@ description: >
   page, then open a GitHub Issue with structured feedback and submit the
   link as your assignment.
 author: Open Coding Society
+permalink: /csa/home-page-game-feedback
 ---
 
 ## Week 0: Onboarding & Readiness — Home Page Game Feedback
