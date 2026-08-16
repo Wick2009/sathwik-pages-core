@@ -1,3 +1,5 @@
+import { javaURI } from '/assets/js/api/config.js';
+
 (function () {
 
   /* ─────────────────────────────────────────────────────
@@ -392,7 +394,7 @@
       if (!Object.keys(files).length) return;
 
       try {
-        const res = await fetch('http://localhost:8585/api/grades/create-gist', {
+        const res = await fetch(`${javaURI}/api/grades/create-gist`, {
           method: 'POST',
           credentials: 'include',
           headers: { 
@@ -457,7 +459,7 @@
         };
 
         try {
-          const res = await fetch('http://localhost:8585/api/grades', {
+          const res = await fetch(`${javaURI}/api/grades`, {
             method: 'POST', credentials: 'include',
             headers: { 'Content-Type': 'application/json', 'X-Origin': 'client' },
             body: JSON.stringify(payload),
