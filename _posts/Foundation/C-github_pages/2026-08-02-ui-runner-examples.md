@@ -2,6 +2,7 @@
 layout: post
 codemirror: true
 title: UI Runner
+courses: { csse: {week: 5}, csp: {week: 1}, csa: {week: 1 } }
 description: An introduction showing how to create JavaScript games.  Game Builder will start the design process. lessons using the UI Runner help understatn the parts of  for game development, canvas graphics, DOM manipulation, and interactive visualizations.
 permalink: /code/ui
 ---

@@ -1,6 +1,6 @@
 ---
 layout: post
-courses: { csse: {week: 5}, csp: {week: 5}, csa: {week: 1 } }
+courses: { csse: {week: 5}, csp: {week: 1}, csa: {week: 1 } }
 codemirror: true
 title: Code Runners - Raw MD
 description: It is advised to use IPYNB method of MD. This builds a lesson using multiple code runners in the same markdown file.  Th code runner approach allows you to create interactive lessons, more code samples -- less words.  
