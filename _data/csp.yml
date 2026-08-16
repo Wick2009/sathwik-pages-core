@@ -58,18 +58,18 @@ Sprint1:
       - "Portfolio:  GitHub, GitHub Pages"
 
   1:
-    theme: "Creative Development"
-    goals:
-      - "Architecture Design: Frontend-to-Backend"
-      - "CI/CD: Git commit, Test, Deploy pipelines"
-      - "Project Management: Kanban, Backlog, Burndown"
-
-  2:
     theme: "Algorithms and Programming"
     goals:
       - "Data Types: Strings, Numbers, Booleans"
       - "Control Structures: Selection, Iteration"
       - "Modularization: Functions, Classes"
+
+  2:
+    theme: "Creative Development"
+    goals:
+      - "Architecture Design: Frontend-to-Backend"
+      - "CI/CD: Git commit, Test, Deploy pipelines"
+      - "Project Management: Kanban, Backlog, Burndown"
 
   3:
     theme: "CPT: 30% of the AP CSP Exam"
