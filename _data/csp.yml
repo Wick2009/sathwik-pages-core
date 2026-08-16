@@ -42,8 +42,6 @@ course:
     - "Python Fundamentals"
     - "Algorithm Design & Analysis"
     - "Data Structures Exploration"
-    - "Flask Web Applications"
-    - "SQL Databases"
     - "Team Project Development"
   zone_title: "CSP Zone - Principles of Programming"
 
@@ -53,38 +51,39 @@ Sprint1:
   end: 4
 
   0:
-    theme: "Computer System and Networks: 5% of the AP CSP Exam"
+    theme: "Computer System and Networks"
     goals:
-      - "Computing Environment: Operating Systems, Tools, and Projects"
-      - "Code Runners: Python, Jupyter, and VS Code"
+      - "Environment Check: OS tools, Python, Jupyter"
+      - "Automation: VS Code, Code Runners"
+      - "Portfolio:  GitHub, GitHub Pages"
 
   1:
-    theme: "Creative Development: 5% of the AP CSP Exam"
+    theme: "Creative Development"
     goals:
-      - "GitHub Pages: Overview and Deployment"
-      - "Tracking: Kanban Boards and Burndown Charts"
-      - "SDLC: Build, Test, Commit, and Deploy"
+      - "Architecture Design: Frontend-to-Backend"
+      - "CI/CD: Git commit, Test, Deploy pipelines"
+      - "Project Management: Kanban, Backlog, Burndown"
 
   2:
-    theme: "Algorithms and Programming: 30% of the AP CSP Exam"
+    theme: "Algorithms and Programming"
     goals:
-      - "Data Types: Strings, Numbers, and Booleans"
-      - "Control Structures: Selection and Iteration"
-      - "Modularization: Functions and Classes"
+      - "Data Types: Strings, Numbers, Booleans"
+      - "Control Structures: Selection, Iteration"
+      - "Modularization: Functions, Classes"
 
   3:
     theme: "CPT: 30% of the AP CSP Exam"
     goals:
-      - "Create Performance Task (CPT): Overview and Requirements"
-      - "Frontend: JavaScript and Jekyll"
-      - "Backend: Python and Flask"
+      - "Create Performance Task (CPT)"
+      - "Frontend Connection"
+      - "Backend API endpoints"
 
   4:
-    theme: "Team Programming: 5% of the AP CSP Exam"
+    theme: "Team Programming and Project Management"
     goals:
-      - "Coordination: Scrum and Standups"
-      - "Retrospective: Reflection and Improvement"
-
+      - "Integration:  Test & Debug"
+      - "Review: Backlog & Grooming"
+      - "Retrospective: Improvement"
 
 Sprint2:
   title: "Full Stack Foundations"
