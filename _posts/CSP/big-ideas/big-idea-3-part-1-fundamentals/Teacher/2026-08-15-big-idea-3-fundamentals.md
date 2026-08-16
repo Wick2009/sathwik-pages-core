@@ -1,11 +1,11 @@
 ---
 layout: post
 title: BI 3 Review
-description: This was an introduction to College Board's Big Idea 3.  This is a revolving collection of Python and JavaScript lessons to help students understand the fundamental algorithm and programming elementes required by College Board's AP Computer Science Principles curriculum.
+description: This is an introduction to College Board's Big Idea 3.  This is a revolving collection of Python and JavaScript lessons to help students understand the fundamental algorithm and programming elementes required by College Board's AP Computer Science Principles curriculum.
 toc: False
 comments: False
 permalink: /csp/big-idea/fundamentals
-courses: {'csp': {'week': 7}}
+courses: {'csp': {'week': 1}}
 type: coding
 author: Isabel Marilla
 menu: nav/csp_units/csp_unit3_fundamentals.html
@@ -47,7 +47,7 @@ In the next unit, you delved into more complex topics, such as:
 
 ### Why it matters
 
-Understanding algorithms and programming is fundamental to your AP CSP class and your AP Exam Project called the "Create Performance Task". 
+Understanding algorithms and programming is fundamental to your AP CSP class and your AP Exam Project called the "Create Performance Task".
 
 These concepts are essential for all types of programming, including full-stack applications and analyzing vast datasets with machine learning.
 

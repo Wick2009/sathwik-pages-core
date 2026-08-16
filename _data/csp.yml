@@ -53,38 +53,36 @@ Sprint1:
   end: 4
 
   0:
-    theme: "Code Runner Review"
+    theme: "Computer System and Networks: 5% of the AP CSP Exam"
+    goals:
+      - "Computing Environment: Operating Systems, Tools, and Projects"
+      - "Code Runners: Python, Jupyter, and VS Code"
+
+  1:
+    theme: "Creative Development: 5% of the AP CSP Exam"
+    goals:
+      - "GitHub Pages: Overview and Deployment"
+      - "Tracking: Kanban Boards and Burndown Charts"
+      - "SDLC: Build, Test, Commit, and Deploy"
+
+  2:
+    theme: "Algorithms and Programming: 30% of the AP CSP Exam"
     goals:
       - "Data Types: Strings, Numbers, and Booleans"
       - "Control Structures: Selection and Iteration"
       - "Modularization: Functions and Classes"
 
-  1:
-    theme: "Development Essentials"
-    goals:
-      - "Computing Environment: Operating Systems, Tools, and Projects"
-      - "SDLC: Build, Test, Commit, and Deploy"
-      - "GitHub Pages: Overview and Deployment"
-
-  2:
-    theme: "Agile Development"
-    goals:
-      - "Coding Challenge: Team Programming"
-      - "Sprints: Planning, Execution, and Iteration"
-      - "Tracking: Kanban Boards and Burndown Charts"
-
   3:
     theme: "CPT: 30% of the AP CSP Exam"
     goals:
-      - "Challenge: Build a Full Stack Project"
+      - "Create Performance Task (CPT): Overview and Requirements"
       - "Frontend: JavaScript and Jekyll"
       - "Backend: Python and Flask"
 
   4:
-    theme: "Team Programming"
+    theme: "Team Programming: 5% of the AP CSP Exam"
     goals:
       - "Coordination: Scrum and Standups"
-      - "Version Control: Repositories, Branching, and Pull Requests"
       - "Retrospective: Reflection and Improvement"
 
 
