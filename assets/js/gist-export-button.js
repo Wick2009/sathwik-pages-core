@@ -1,4 +1,13 @@
+/**
+ * The grading submission widget.
+ *
+ * This file owns the pixel-art UI and the grading flow only. Reading the
+ * runners and creating the envelope are shared modules; this is the one place
+ * that knows about both.
+ */
 import { javaURI } from '/assets/js/api/config.js';
+import { readRunners, unsavedRunners } from '/assets/js/runner-io.js';
+import { exportToGist } from '/assets/js/gist.js';
 
 (function () {
 
@@ -353,13 +362,7 @@ import { javaURI } from '/assets/js/api/config.js';
   async function startExport() {
     if (scrollPhase !== 'idle') return;
 
-    const containers = document.querySelectorAll('.code-runner-container');
-    const unsaved = [...containers].filter(c => {
-      const key = c.dataset.storageKey;
-      return !key || localStorage.getItem(key) === null;
-    });
-
-    if (unsaved.length) {
+    if (unsavedRunners().length) {
       typeDialog(`⚠ Please save your code first using the 💾 button in each runner.`);
       return;
     }
@@ -372,46 +375,16 @@ import { javaURI } from '/assets/js/api/config.js';
     (async () => {
       await new Promise(r => setTimeout(r, 5500));
 
-      const files = {};
-      containers.forEach((container, index) => {
-        const runnerId = container.dataset.runnerId || `runner_${index + 1}`;
-        const challengeBox = container.querySelector('.challenge-box');
-        const challengeTitle = challengeBox?.querySelector('h3')?.textContent.trim() || `Part ${index + 1}`;
-        const challengeDesc  = challengeBox?.querySelector('p')?.textContent.trim() || '';
-        const langSelect = container.querySelector('.languageSelect');
-        const lang = langSelect?.value || 'java';
-        const ext = { python: 'py', java: 'java', javascript: 'js' }[lang] || 'txt';
-
-        const storageKey = container.dataset.storageKey;
-        const code = storageKey ? localStorage.getItem(storageKey)?.trim() : null;
-        if (!code) return;
-
-        const content = `Question: ${challengeTitle}\n${challengeDesc}\n\nAnswer (runner: ${runnerId}):\n\n${code}`;
-        const safeId = runnerId.toLowerCase().replace(/[^a-z0-9_-]/g, '_');
-        files[`${safeId}.${ext}`] = { content };
-      });
-
+      const files = readRunners();
       if (!Object.keys(files).length) return;
 
       try {
-        const res = await fetch(`${javaURI}/api/grades/create-gist`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 
-            'Content-Type': 'application/json', 
-            'X-Origin': 'client' 
-          },
-          body: JSON.stringify({
-            files,
-            description: widget.dataset.gistDescription || 'Exported from Open Coding Society'
-          })
+        gistUrl = await exportToGist(files, {
+          type: 'submission',
+          description: widget.dataset.gistDescription,
         });
 
-        if (!res.ok) throw new Error('Gist creation failed');
-
-        const { url } = await res.json();
-        gistUrl = url;
-        await navigator.clipboard.writeText(url);
+        await navigator.clipboard.writeText(gistUrl);
 
         exported = true;
         exportBtn.textContent = '✓ EXPORTED';
@@ -422,7 +395,7 @@ import { javaURI } from '/assets/js/api/config.js';
 
       } catch (e) {
         console.error(e);
-        typeDialog('⚠ Failed to create gist. Try again or contact teacher.');
+        typeDialog(`⚠ ${e.message || 'Failed to create gist. Try again or contact teacher.'}`);
         exportBtn.disabled = false;
         exportBtn.textContent = '✦ EXPORT';
       }
