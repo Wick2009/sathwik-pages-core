@@ -86,26 +86,38 @@ Comprehensive start. A topic-by-topic guide to getting this project running is p
 
 Quick start.  A quick start below is a reminder, but is dependent on your knowledge.  Only follow this instruction if you need a refresher.  Always default to the comprehensive start if any problem occurs.
 
-#### Clone Repo
+#### Create From Template, Then Clone
 
-Run these commands to obtain the project, then locate into the project directory with the terminal, install an extensive set of tools, and make.
+Use **GitHub "Use this template"** on this repository and create your own repository named `pages`.
+Keeping the repository name as `pages` avoids `site.baseurl` mismatch problems.
+
+Then clone your own repository and enter the project root (not the scripts folder):
 
 ```bash
-git clone <this-repo> # git clone https://github.com/open-coding-society/pages.git 
-cd <repo-dir>/scripts # cd pages 
+git clone https://github.com/<your-username>/pages.git
+cd pages
+```
+
+To keep your repository updated with changes from the source project, add `upstream` and merge updates:
+
+```bash
+git remote add upstream https://github.com/open-coding-society/pages.git
+git fetch upstream
+git checkout main
+git merge upstream/main
 ```
 
 #### Windows WSL and/or Ubuntu or Kali Users
 
-- Execute the script: `./activate_ubuntu.sh` or `./activate_kali.sh`
+- Execute the script: `./scripts/activate_ubuntu.sh` or `./scripts/activate_kali.sh`
 
 #### macOS Users
 
-- Execute the script: `./activate_macos.sh`
+- Execute the script: `./scripts/activate_macos.sh`
 
 #### Kasm Cloud Desktop Users
 
-- Execute the script: `./activate_github.sh`
+- Execute the script: `./scripts/activate_github.sh`
 
 ## Run Server on localhost
 
