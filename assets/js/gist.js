@@ -93,10 +93,57 @@ export function readManifest(files) {
   }
 }
 
-/*
- * Note: importFromGist(url) belongs here and is the other half of the envelope,
- * but it needs a backend read endpoint (GET /api/gist/{id}) that does not exist
- * yet. Gists are created as secret, so the browser cannot reliably fetch them
- * from GitHub directly. Shipping a stub that fails at runtime would be worse
- * than leaving the gap visible, so it is deliberately absent.
+/**
+ * Pull the gist id out of anything a person is likely to paste.
+ *
+ * Accepts a bare id, a gist URL with or without a username, and a trailing
+ * revision or /edit segment.
+ *   https://gist.github.com/user/3f7a1b...  -> 3f7a1b...
+ *   https://gist.github.com/3f7a1b...       -> 3f7a1b...
+ *   3f7a1b...                               -> 3f7a1b...
+ *
+ * @param {string} urlOrId
+ * @returns {string|null}
  */
+export function gistIdFrom(urlOrId) {
+  if (!urlOrId) return null;
+  const text = String(urlOrId).trim();
+
+  if (/^[a-fA-F0-9]{6,64}$/.test(text)) return text;
+
+  // Last hex-looking path segment wins; ignores /edit, /revisions, #file-...
+  const segments = text.split(/[/#?]/).filter(Boolean);
+  for (let i = segments.length - 1; i >= 0; i--) {
+    if (/^[a-fA-F0-9]{6,64}$/.test(segments[i])) return segments[i];
+  }
+  return null;
+}
+
+/**
+ * Open an envelope: given its URL (or id), get the files back.
+ *
+ * Goes through the backend rather than GitHub directly — gists are created
+ * secret, and the token that can read them lives on the server.
+ *
+ * @param {string} urlOrId
+ * @returns {Promise<{files: Object, description: string, manifest: Object|null}>}
+ */
+export async function importFromGist(urlOrId) {
+  const id = gistIdFrom(urlOrId);
+  if (!id) throw new Error('That does not look like a gist link.');
+
+  const res = await fetch(`${javaURI}/api/grades/read-gist/${id}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: { 'X-Origin': 'client' },
+  });
+
+  if (!res.ok) {
+    if (res.status === 404) throw new Error('No gist found for that link.');
+    if (res.status === 401 || res.status === 403) throw new Error('Sign in to open this.');
+    throw new Error(`Could not open gist (${res.status})`);
+  }
+
+  const { files, description } = await res.json();
+  return { files: files || {}, description, manifest: readManifest(files) };
+}
