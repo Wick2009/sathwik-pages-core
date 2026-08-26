@@ -99,7 +99,7 @@ Hi! My name is [Your Full Name]
 
 ### Drag and Drop Buttons
 
-> Markup only, no inline styles. Drag a part onto a slot, or click a part and then a slot. Styles come from `_sass/open-coding/elements/buttons/variant-dragdrop.scss`.
+> Use `ocs__drag-btn` for draggable choices and `ocs__drop-btn` for their destinations. Drag a part onto a slot, or select both buttons with a mouse or keyboard. The complete class contract is documented in `_sass/open-coding/elements/buttons/button-grammar.md`.
 
 <section class="ocs__dnd" id="dnd-demo">
     <div class="ocs__dnd-header">
@@ -110,15 +110,15 @@ Hi! My name is [Your Full Name]
     <div class="ocs__dnd-layout">
         <div class="ocs__dnd-panel">
             <h4 class="ocs__dnd-panel-title">Parts tray</h4>
-            <button type="button" class="ocs__drag-btn" draggable="true" data-part="CPU">CPU</button>
-            <button type="button" class="ocs__drag-btn" draggable="true" data-part="RAM">RAM</button>
-            <button type="button" class="ocs__drag-btn" draggable="true" data-part="GPU">Graphics card</button>
+            <button type="button" class="ocs__drag-btn" draggable="true" data-part="CPU" aria-pressed="false">CPU</button>
+            <button type="button" class="ocs__drag-btn" draggable="true" data-part="RAM" aria-pressed="false">RAM</button>
+            <button type="button" class="ocs__drag-btn" draggable="true" data-part="GPU" aria-pressed="false">Graphics card</button>
         </div>
         <div class="ocs__dnd-panel">
             <h4 class="ocs__dnd-panel-title">Connection points</h4>
-            <button type="button" class="ocs__drop-btn" data-slot="CPU">CPU socket</button>
-            <button type="button" class="ocs__drop-btn" data-slot="RAM">RAM slots</button>
-            <button type="button" class="ocs__drop-btn" data-slot="GPU">PCIe slot</button>
+            <button type="button" class="ocs__drop-btn" data-slot="CPU" data-label="CPU socket">CPU socket</button>
+            <button type="button" class="ocs__drop-btn" data-slot="RAM" data-label="RAM slots">RAM slots</button>
+            <button type="button" class="ocs__drop-btn" data-slot="GPU" data-label="PCIe slot">PCIe slot</button>
         </div>
     </div>
 </section>
@@ -134,13 +134,16 @@ Hi! My name is [Your Full Name]
   function select(part) {
     selected = part;
     parts.forEach(function(other) {
-      other.classList.toggle('is-selected', other === part);
+      const isSelected = other === part;
+      other.classList.toggle('is-selected', isSelected);
+      other.setAttribute('aria-pressed', String(isSelected));
     });
     status.textContent = part.textContent + ' selected. Choose its slot.';
   }
 
   function place(part, slot) {
-    if (part === null || part.disabled || slot.disabled) {
+    if (part === null || part === undefined || part.disabled || slot.disabled) {
+      status.textContent = 'Choose an available part first.';
       return;
     }
     if (part.dataset.part !== slot.dataset.slot) {
@@ -150,9 +153,10 @@ Hi! My name is [Your Full Name]
     part.disabled = true;
     part.draggable = false;
     part.classList.remove('is-selected');
+    part.setAttribute('aria-pressed', 'false');
     slot.disabled = true;
     slot.classList.add('is-filled');
-    slot.textContent = '✓ ' + part.textContent;
+    slot.textContent = '✓ ' + part.textContent + ' → ' + slot.dataset.label;
     selected = null;
     status.textContent = 'Installed ' + part.textContent + '.';
   }
@@ -177,7 +181,11 @@ Hi! My name is [Your Full Name]
     slot.addEventListener('drop', function(event) {
       event.preventDefault();
       slot.classList.remove('is-over');
-      place(selected, slot);
+      const partId = event.dataTransfer.getData('text/plain');
+      const draggedPart = parts.find(function(part) {
+        return part.dataset.part === partId;
+      });
+      place(draggedPart, slot);
     });
   });
 
@@ -187,14 +195,13 @@ Hi! My name is [Your Full Name]
       part.disabled = false;
       part.draggable = true;
       part.classList.remove('is-selected');
+      part.setAttribute('aria-pressed', 'false');
     });
     slots.forEach(function(slot) {
       slot.disabled = false;
+      slot.textContent = slot.dataset.label;
       slot.classList.remove('is-filled', 'is-over');
     });
-    slots[0].textContent = 'CPU socket';
-    slots[1].textContent = 'RAM slots';
-    slots[2].textContent = 'PCIe slot';
     status.textContent = 'Drag a part to its slot.';
   });
 })();
