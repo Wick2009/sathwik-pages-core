@@ -3208,10 +3208,13 @@
 
   /* One message row: avatar in the gutter, sender/time/body stacked beside it */
   .chat-msg {
+    position: relative;
     display: flex;
     align-items: flex-start;
     gap: 10px;
-    padding: 4px 0;
+    padding: 4px 6px;
+    margin: 0 -6px;
+    border-radius: 6px;
 
     /* Runs of messages from the same person collapse into one block */
     &.is-continued {
@@ -3220,6 +3223,12 @@
       .chat-avatar { visibility: hidden; }
       .chat-msg-meta { display: none; }
     }
+  }
+
+  /* Discord-style: hovering someone else's message lifts it slightly and
+     reveals the action toolbar. Only when signed in (.can-act on the log). */
+  .chat-messages.can-act .chat-msg:not(.is-self):hover {
+    background: rgba($text, 0.045);
   }
 
   .chat-avatar {
@@ -3371,6 +3380,7 @@
 
   /* Compact bubbles — this widget is small and lives inside a week card */
   .chat-msg {
+    position: relative;
     margin: 0 0 8px 0;
     padding: 8px 10px;
     border: 1px solid $bg-3;
@@ -3385,6 +3395,11 @@
       border-color: rgba($accent, 0.35);
       background: rgba($accent, 0.08);
     }
+  }
+
+  .chat-messages.can-act .chat-msg:not(.is-self):hover {
+    background: rgba($text, 0.07);
+    border-color: rgba($text, 0.14);
   }
 
   .chat-msg-meta {
@@ -3604,10 +3619,266 @@
 /* the eraser icon in the Clear-formatting button */
 .rt-btn svg { display: block; }
 
+/* ── Attachments: "+" button, its menu, the staged tray ─────────────── */
+.rt-input-row {
+  display: flex;
+  align-items: flex-end;
+}
+
+.rt-composer.is-dragover {
+  border-color: $accent;
+  background: rgba($accent, 0.06);
+}
+
+.rt-attach {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  margin: 0 2px 5px 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: $bg-3;
+  color: $text;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+
+  svg { display: block; }
+  &:hover { background: rgba($accent, 0.25); color: $accent; }
+  &.is-active { background: $accent; color: var(--pref-bg-color); transform: rotate(45deg); }
+
+  &:focus-visible { outline: none; box-shadow: 0 0 0 2px $accent; }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+.rt-attach-menu {
+  position: fixed;
+  z-index: 1000;
+  box-sizing: border-box;
+  width: 250px;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  border: 1px solid $bg-3;
+  border-radius: 10px;
+  background: var(--panel);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.5);
+}
+
+.rt-attach-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: $text;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s;
+
+  svg { flex-shrink: 0; color: $accent; }
+  &:hover { background: rgba($text, 0.08); }
+  &:focus-visible { outline: none; background: rgba($accent, 0.16); }
+}
+
+.rt-attach-item-text { display: flex; flex-direction: column; min-width: 0; }
+.rt-attach-item-label { font-size: 13px; font-weight: 600; }
+.rt-attach-item-hint { font-size: 11px; color: $text-muted; }
+
+.rt-attachments {
+  padding: 8px 10px 2px;
+
+  &[hidden] { display: none; }
+}
+
+.rt-att-staged {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 320px;
+  padding: 6px;
+  border: 1px solid $bg-3;
+  border-radius: 8px;
+  background: rgba($bg-0, 0.35);
+}
+
+.rt-att-staged-thumb {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  overflow: hidden;
+  background: $bg-3;
+  color: $text-muted;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+}
+
+.rt-att-staged-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.rt-att-staged-name {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rt-att-staged-size { font-size: 11px; color: $text-muted; }
+
+.rt-att-staged-remove {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 50%;
+  background: $bg-3;
+  color: $text;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover { background: $red; color: #fff; }
+}
+
+.rt-att-error {
+  margin: 0;
+  padding: 6px 8px;
+  border: 1px solid rgba($red, 0.4);
+  border-radius: 6px;
+  background: rgba($red, 0.1);
+  color: $red;
+  font-size: 12px;
+}
+
+/* ── Reply bar (composer): "Replying to …" above the input ──────────── */
+.rt-reply-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px 0;
+  font-size: 12px;
+
+  &[hidden] { display: none; }
+}
+.rt-reply-label { color: $accent; font-weight: 600; flex-shrink: 0; }
+.rt-reply-snippet {
+  color: $text-muted;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+.rt-reply-cancel {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: 50%;
+  background: $bg-3;
+  color: $text;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover { background: $red; color: #fff; }
+}
+
+/* ── Message hover actions: react / reply / copy ───────────────────── */
+.chat-messages.has-msg-actions { position: relative; }
+
+.chat-msg-actions {
+  position: absolute;
+  top: -12px;
+  right: 6px;
+  z-index: 3;
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid $bg-3;
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s;
+}
+.chat-msg:hover > .chat-msg-actions,
+.chat-msg-actions:hover,
+.chat-msg-actions:focus-within {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.chat-msg-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: $text-muted;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+
+  svg { display: block; }
+  &:hover { background: rgba($text, 0.1); color: $text; }
+  &.chat-msg-action-react:hover { color: $orange; }
+  &.is-done { color: $green; }
+}
+
+.chat-reaction-picker { z-index: 1200; }
+
+/* Reaction pills under a message */
+.chat-reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 5px;
+}
+.chat-reaction {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px 1px 5px;
+  border: 1px solid $bg-3;
+  border-radius: 999px;
+  background: rgba($text, 0.05);
+  color: $text;
+  font-size: 12px;
+  line-height: 1.6;
+  cursor: pointer;
+
+  &.is-mine {
+    border-color: rgba($accent, 0.55);
+    background: rgba($accent, 0.14);
+  }
+  &:hover { border-color: rgba($accent, 0.75); }
+}
+.chat-reaction-emoji { font-size: 13px; }
+.chat-reaction-count { font-variant-numeric: tabular-nums; color: $text-muted; }
+.chat-reaction.is-mine .chat-reaction-count { color: $accent; }
+
 @media (max-width: 768px) {
   .rt-toolbar { gap: 1px; }
   .rt-btn { min-width: 32px; height: 32px; }
   .rt-select { height: 32px; }
+  .rt-attach { width: 34px; height: 34px; }
+  .chat-msg-action { width: 32px; height: 32px; }
 }
 
 /* ── Formatting inside a rendered message ─────────────────────────────
@@ -3627,4 +3898,85 @@
   }
 
   li { margin: 1px 0; }
+
+  /* The reply quote a Reply-action message carries */
+  blockquote {
+    margin: 0 0 4px;
+    padding: 2px 0 2px 8px;
+    border-left: 2px solid rgba($accent, 0.5);
+    color: $text-muted;
+    font-size: 0.92em;
+    line-height: 1.4;
+
+    b { color: $accent; font-weight: 600; margin-right: 4px; }
+  }
+}
+
+/* ── An attachment rendered inside a message ──────────────────────────
+   renderAttachment() (rich-text.js) appends one of these after the text. */
+.rt-att {
+  display: block;
+  margin-top: 6px;
+}
+
+.rt-att-image {
+  margin: 6px 0 0;
+
+  img {
+    display: block;
+    max-width: min(100%, 380px);
+    max-height: 320px;
+    width: auto;
+    border-radius: 8px;
+    border: 1px solid $bg-3;
+  }
+}
+
+.rt-att-video {
+  max-width: min(100%, 380px);
+  max-height: 320px;
+  border-radius: 8px;
+  border: 1px solid $bg-3;
+  background: $bg-0;
+}
+
+.rt-att-file {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 300px;
+  padding: 8px 12px;
+  border: 1px solid $bg-3;
+  border-radius: 8px;
+  background: rgba($bg-0, 0.35);
+  color: $text;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+
+  svg { flex-shrink: 0; color: $accent; }
+  &:hover { border-color: rgba($accent, 0.6); background: rgba($accent, 0.08); }
+  &:disabled { cursor: default; opacity: 0.7; }
+}
+
+.rt-att-file-meta { display: flex; flex-direction: column; min-width: 0; }
+.rt-att-file-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rt-att-file-size { font-size: 11px; color: $text-muted; }
+
+.chat-msg-body .rt-att-error {
+  display: block;
+  margin: 6px 0 0;
+  padding: 6px 8px;
+  border: 1px solid rgba($red, 0.4);
+  border-radius: 6px;
+  background: rgba($red, 0.1);
+  color: $red;
+  font-size: 12px;
 }
