@@ -137,6 +137,10 @@
   --ocs-accent-contrast: #FFFFFF;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 .ocs-sr-only {
   position: absolute !important;
   width: 1px !important;
@@ -2148,4 +2152,9 @@
 }
 .ocs__links--wide {
   gap: 1rem;
+}
+
+a.ocs-btn,
+a.ocs__btn {
+  color: var(--btn-fg) !important;
 }
