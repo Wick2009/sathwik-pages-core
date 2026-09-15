@@ -35,6 +35,10 @@ exclude:
   - vendor
 # Custom excludes
   - Makefile
+  # Defining exclude replaces Jekyll's defaults rather than adding to them,
+  # so node_modules has to be listed again or it is published.
+  - node_modules
+  - scripts/dm-tests
   - _notebooks
   - _docx
   - _projects

@@ -1,4 +1,6 @@
 HOST ?= localhost
+.DEFAULT_GOAL := default
+include scripts/dm.mk
 PORT ?= 4500
 LOG_FILE = /tmp/jekyll$(PORT).log
 PYTHON := venv/bin/python3
@@ -24,6 +26,7 @@ DEV_PROJECTS := $(shell grep -v '^\#' $(PROJECT_FILE) 2>/dev/null | grep -v '^$$
 
 # Known top-level targets (add to this if needed)
 KNOWN_TARGETS := \
+	dm-build dm-preview dm-frontend dm-test dm-check \
 	default dev serve build clean stop reload refresh help \
 	serve-minima serve-cayman serve-yat serve-so-simple serve-hydejack \
 	build-minima build-cayman build-yat build-so-simple \

@@ -602,6 +602,9 @@ export function createRichComposer(opts = {}) {
     maxLength = MAX_LENGTH_DEFAULT,
     onSubmit = () => {},
     onInput = () => {},
+    // Bulleted/numbered list buttons. Useful in the class chats, where people
+    // post structured announcements; noise in a one-to-one conversation.
+    lists = true,
   } = opts;
 
   const root = document.createElement('div');
@@ -1017,7 +1020,7 @@ export function createRichComposer(opts = {}) {
 
   toolbar.append(
     boldBtn, italicBtn, underlineBtn, strikeBtn, separator(),
-    bulletBtn, numberBtn, separator(),
+    ...(lists ? [bulletBtn, numberBtn, separator()] : []),
     fontSelect, sizeSelect, separator(),
     emojiBtn, clearBtn,
   );
@@ -1262,7 +1265,7 @@ export function createRichComposer(opts = {}) {
 
   function syncToolbarState() {
     [['bold', boldBtn], ['italic', italicBtn], ['underline', underlineBtn], ['strikeThrough', strikeBtn],
-      ['insertUnorderedList', bulletBtn], ['insertOrderedList', numberBtn]].forEach(([cmd, btn]) => {
+      ...(lists ? [['insertUnorderedList', bulletBtn], ['insertOrderedList', numberBtn]] : [])].forEach(([cmd, btn]) => {
       let on = false;
       try { on = document.queryCommandState(cmd); } catch (_) { /* ignore */ }
       btn.classList.toggle('is-active', on);
