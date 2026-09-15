@@ -124,6 +124,14 @@
   formEl.classList.add('chat-form--rich');
   formEl.insertBefore(composer.element, sendBtn);
 
+  const composer = createRichComposer({
+    placeholder: `Ask a question about Week ${WEEK_INDEX}…`,
+    maxLength: 2000,
+    onSubmit: submitMessage,
+  });
+  formEl.classList.add('chat-form--rich');
+  formEl.insertBefore(composer.element, sendBtn);
+
   function setStatus(text, tone) {
     statusEl.textContent = text;
     statusPillEl.classList.remove('is-live', 'is-preview', 'is-error');
