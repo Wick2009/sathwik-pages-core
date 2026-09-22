@@ -5,10 +5,11 @@ title: OCS Grid Grammar
 categories: [SASS, Grids]
 lesson_language: SASS
 lesson_topic: Grids
-lesson_part: interactive
+lesson_source: OCS
 lesson_type: lesson
 permalink: /sass/grids/
 author: Aryan M, Raymond L, Pranay K
+microblog: true 
 ---
 
 ## The Core Rule
@@ -247,3 +248,14 @@ author: githubID
 * **Revision Made:** We cut the homework to two grids (standard and calculator) and added a short grammar table at the top. This keeps the task under 10 minutes and focused on the core pattern.
 
 ---
+## College Board Connection
+
+This lesson connects to **AP Computer Science Principles Big Idea 1: Creative Development**, specifically the design of a program and its user interface. The College Board states that program design can include the **"creation of diagrams that represent the layouts of the user interface."**
+
+This connects to OCS Grid Grammar because students are learning how to organize content into responsive rows, columns, cards, and other layouts using a reusable design system.
+
+---
+
+## References
+
+College Board. *AP Computer Science Principles Course and Exam Description*. Big Idea 1: Creative Development.

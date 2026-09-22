@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function(){
       frontendUrl: "http://sfifoundation.opencodingsociety.com",
       backendUrl: "https://greppers-be.opencodingsociety.com/"
     },
-    "Communication System": {
+    "OCS Communication Systems": {
       pageUrl: "https://pages.opencodingsociety.com/capstone/communication-system/",
       frontendUrl: "https://github.com/UGRC-CSA/Pages",
       backendUrl: "https://github.com/Open-Coding-Society/spring"
@@ -326,8 +326,8 @@ document.addEventListener('DOMContentLoaded', function(){
            <div class="ocs__image-frame ocs__image-frame--thumbnail capstone-card-placeholder" style="background: linear-gradient(135deg, #06b6d4, #0f172a);">SUB</div>
        </a>
        <div>
-           <h3><a href="{% post_url capstone/2026-08-31-submissions-capstone %}">OCS Submissions</a></h3>
-           <p>Umbrella capstone covering three groups' work on the assignment/submission system: assignment creator permissions, submission analytics, and AI grading.</p>
+           <h3><a href="{% post_url capstone/2026-08-31-submissions-capstone %}">OCS Assignments System</a></h3>
+           <p>Students are extending the OCS assignment lifecycle from creation through submission, analytics, and grading. The system supports inserting rubrics directly into assignments, providing immediate AI evaluation, and assigning student-generated lessons for peer review and grading. After initial automated evaluation, live review sessions follow, allowing students and graders to discuss challenges, successes, and the work. A grader assignment view supports this process by giving graders a place to review submissions, record observations, and provide an overall assessment. The work integrates OCS interfaces with the Java/Spring backend, AWS S3, and AWS RDS/SQL, moving assignment data, student activity, scores, and feedback into a shared system rather than separate tools and spreadsheets.</p>
            <p>Groups: Assignment Creator Permissions, Submission Analytics, AI Grading</p>
        </div>
    </div>
@@ -436,7 +436,7 @@ document.addEventListener('DOMContentLoaded', function(){
          <img src="{{ '/images/' | append: site.data.toolchain-trail-capstone.Logo | relative_url }}" alt="{{ site.data.toolchain-trail-capstone.Title }} logo" class="ocs__image-frame ocs__image-frame--thumbnail" />
        </a>
        <div>
-         <h3><a href="{% post_url capstone/2026-08-28-toolchain-trail %}">Toolchain Trail</a></h3>
+         <h3><a href="{% post_url capstone/2026-08-28-toolchain-trail %}"></a>{{ site.data.toolchain-trail-capstone.Title }}</h3>
          <p>{{ site.data.toolchain-trail-capstone.Overview }}</p>
        </div>
    </div>
@@ -779,6 +779,35 @@ document.addEventListener('DOMContentLoaded', function(){
             <p>Team: Nitya, Vivian, Virginia</p>
         </div>
     </div>
+    
+    <!-- Doing Exceptional Deeds Website Redesign (CSP, 2026/2027) -->
+  <div class="ocsgrid-cell CSP"
+      data-year="2026-2027"
+      data-page-url="{{ '/capstone/doingexceptionaldeeds/' | relative_url }}">
+
+      <a href="{{ '/capstone/doingexceptionaldeeds/' | relative_url }}">
+          <div class="ocsimage-frame ocs__image-frame--thumbnail capstone-card-placeholder">
+              D.A.D.
+          </div>
+      </a>
+
+      <div>
+          <h3>
+              <a href="{{ '/capstone/doingexceptionaldeeds/' | relative_url }}">
+                  Doing Exceptional Deeds
+              </a>
+          </h3>
+
+          <p>
+              A website redesign focused on simpler navigation, shorter content,
+              student and teacher accounts, teacher profiles, and an easier
+              events and calendar experience.
+          </p>
+
+          <p>Team: Jake, Noah, Ishaan</p>
+      </div>
+    </div>
+
 
    <!-- FOPS (2026-2027) -->
  <div class="ocs__grid-cell CSP" data-year="2026-2027">
@@ -876,27 +905,15 @@ document.addEventListener('DOMContentLoaded', function(){
        </div>
    </div>
 
-   <!-- OCS Assignment Tracker (CSA) -->
+   <!-- OCS Admin & Security Team (CSA) -->
   <div class="ocs__grid-cell CSA" data-year="2026-2027">
-       <a href="{% post_url capstone/2026-09-03-chuds-capstone %}">
-           <img src="/images/backendboyzgcpiccc.png" alt="Backend Boyz - OCS Assignment Tracker" class="ocs__image-frame ocs__image-frame--thumbnail" />
+       <a href="{% post_url capstone/2026-09-03-ocs-admin-security-team %}">
+           <img src="/images/capstone/cccs-security-logo.png" alt="OCS Admin & Security Team" class="ocs__image-frame ocs__image-frame--thumbnail" />
        </a>
        <div>
-           <h3><a href="{% post_url capstone/2026-09-03-chuds-capstone %}">Backend Boyz</a></h3>
-           <p>Developing an easy way for mentors to access Open Coding Society, featuring Google OAuth-verified signup, a scoped capstone project dashboard, real-time team chat, and role-based permissions between students and admins.</p>
-           <p>Team: Backend Boyz (Shayan B, Darshan S, Rudra J, Dhyan S, Harrish A, Lucas M, Zhengli L, Jacob C, Arnav P)</p>
-       </div>
-   </div>
-
-   <!-- OCS Security (CSA) -->
-  <div class="ocs__grid-cell CSA" data-year="2026-2027">
-       <a href="{% post_url capstone/2026-09-03-cccs-security %}">
-           <img src="/images/capstone/cccs-security-logo.png" alt="CCCS Security" class="ocs__image-frame ocs__image-frame--thumbnail" />
-       </a>
-       <div>
-           <h3><a href="{% post_url capstone/2026-09-03-cccs-security %}">OCS Security</a></h3>
-           <p>These security fixes ensure that new users must create complex passwords to prevent unauthorized access, and ensure code runners execute in individual containers to prevent malicious RCEs from accessing sensitive information.</p>
-           <p>Team: Lucas Masterson, Jacob Chou, Zhengji Li</p>
+           <h3><a href="{% post_url capstone/2026-09-03-ocs-admin-security-team %}">OCS Admin & Security Team</a></h3>
+           <p>Opening Open Coding Society to mentors while locking it down: Google OAuth-verified mentor signup, a scoped capstone dashboard with role-based permissions, complex-password enforcement in every layer, and code runners isolated in their own containers to keep malicious code away from sensitive information.</p>
+           <p>Team: Shayan B, Darshan S, Rudra J, Dhyan S, Harrish A, Lucas M, Zhengji L, Jacob C, Arnav P</p>
        </div>
    </div>
 
@@ -912,14 +929,14 @@ document.addEventListener('DOMContentLoaded', function(){
        </div>
    </div>
 
-   <!-- Communication System (CSA) -->
+   <!-- OCS Communication Systems (CSA) -->
   <div class="ocs__grid-cell CSA" data-year="2026-2027">
        <a href="{% post_url capstone/2026-08-27-communication-system-capstone %}">
-           <img src="/images/csa-chat/announcement-chat.png" alt="Communication System - class announcement chat on the CSA course page" class="ocs__image-frame ocs__image-frame--thumbnail" />
+           <img src="/images/csa-chat/announcement-chat.png" alt="OCS Communication System - class announcement chat on the CSA course page" class="ocs__image-frame ocs__image-frame--thumbnail" />
        </a>
        <div>
-           <h3><a href="{% post_url capstone/2026-08-27-communication-system-capstone %}">Communication System</a></h3>
-           <p>Moving class discussion out of Slack and onto the course site — class-wide announcements, per-week chat, and a rich-text composer with emoji already ship, with per-assignment threads, 1:1 direct messages, GIFs, Slack-style emoji reactions, and teacher moderation still to build.</p>
+           <h3><a href="{% post_url capstone/2026-08-27-communication-system-capstone %}">OCS Communication Systems</a></h3>
+           <p>Students are extending the OCS communication system with chat, announcements, assignment discussions, direct messaging, calendar integration, and reusable presentation components. The work includes maintaining the real-time WebSocket service and connecting these features to the existing course site, backend APIs, security, and data model. Students will also develop the OCS SASS grammar—a small, purpose-built styling system for consistent, responsive, reusable components across the OCS GitHub Pages ecosystem.</p>
            <p>Team: Akhil, Syown, Leon, Perry, Skandan, Sathwik, Akshajh, Tarun, Samarth</p>
        </div>
    </div>
