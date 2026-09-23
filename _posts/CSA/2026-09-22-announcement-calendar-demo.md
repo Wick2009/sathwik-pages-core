@@ -21,7 +21,7 @@ Switch between them with the tabs. Use **View as** to see the teacher view and t
 | | How the teacher adds an event | Best for |
 |---|---|---|
 | **V1: Add-to-calendar button** | Write the announcement, click **Add to calendar**, pick a date, type and priority, then Send | One-off events such as a quiz, a deadline or a guest speaker |
-| **V2: Quick syntax** | Type `[Mon]: Title` lines, the same format as Slack. Detected events appear as chips you can switch off | Posting a whole week's plan at once |
+| **V2: Quick syntax** | Type `[Mon]: Title` lines, the same format as Slack. Asterisks set the priority (`*` = P1, `**` = P0). Detected events appear as chips you can switch off | Posting a whole week's plan at once |
 
 In both versions, an announcement that carries an event shows a card with a **View on OCS calendar** button. Teachers also get **Remove from calendar**.
 

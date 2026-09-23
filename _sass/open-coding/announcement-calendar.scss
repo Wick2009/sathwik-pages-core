@@ -335,8 +335,7 @@ $announcement-priority-colors: (
     text-align: left;
     cursor: pointer;
 
-    &[data-type="grade"] { border-color: map-get($announcement-priority-colors, "P0"); }
-    &[data-type="check-in"] { border-color: $green; }
+    @include announcement-priority-accent(border-color);
     &[aria-pressed="false"] {
       opacity: 0.45;
       border-style: dashed;

@@ -26,7 +26,8 @@ export function mountQuickSyntax(ctx) {
       <ul>
         <li><code>Week of 9/28</code> or <code>Week 7</code> picks the week (default: this school week)</li>
         <li><code>[Mon]: Title</code> or <code>[Wed - Thu]: Title</code> adds an event on those days</li>
-        <li><code>[Fri]: * Title</code> = check-in, <code>[Fri]: ** Title</code> = graded</li>
+        <li>Asterisks set the priority. <code>[Fri]: Title</code> is P2 (normal), <code>[Fri]: * Title</code> is P1, and <code>[Fri]: ** Title</code> is P0 (top priority)</li>
+        <li>Like in Slack, <code>*</code> also marks a check-in and <code>**</code> a graded item</li>
         <li><code>• detail</code> on the next line becomes the description</li>
         <li><kbd>Shift</kbd>+<kbd>Enter</kbd> for a new line, <kbd>Enter</kbd> sends</li>
       </ul>
@@ -50,13 +51,13 @@ export function mountQuickSyntax(ctx) {
       const chip = document.createElement('button');
       chip.type = 'button';
       chip.className = 'quick-syntax-chip';
-      chip.dataset.type = entry.type;
+      chip.dataset.priority = entry.priority;
       chip.setAttribute('aria-pressed', String(!skipped.has(entry.key)));
       chip.title = skipped.has(entry.key) ? 'Skipped — click to include' : 'Click to skip this one';
       const dates = entry.dates.map(formatShortDate).join(', ');
       chip.innerHTML = `<span class="quick-syntax-chip-day">${escapeHtml(entry.dayLabel)}</span>`
         + `<span class="quick-syntax-chip-title">${escapeHtml(entry.title)}</span>`
-        + `<span class="quick-syntax-chip-meta">${escapeHtml(TYPE_LABELS[entry.type] || entry.type)} · ${escapeHtml(dates)}</span>`;
+        + `<span class="quick-syntax-chip-meta">${entry.priority} · ${escapeHtml(TYPE_LABELS[entry.type] || entry.type)} · ${escapeHtml(dates)}</span>`;
       chip.addEventListener('click', () => {
         if (skipped.has(entry.key)) skipped.delete(entry.key); else skipped.add(entry.key);
         render();
@@ -85,7 +86,9 @@ export function mountQuickSyntax(ctx) {
         // events private to the sender, which would hide them from students.
         for (const entry of wanted) {
           for (const date of entry.dates) {
-            created.push(await store.createEvent({ title: entry.title, date, type: entry.type, description: entry.description }));
+            created.push(await store.createEvent({
+              title: entry.title, date, type: entry.type, priority: entry.priority, description: entry.description,
+            }));
           }
         }
         return { html: appendEventMarkers(html, created) };

@@ -6,7 +6,11 @@
 //   Week of 9/28            (or "Week 7"; optional, defaults to this school week)
 //   [Mon]: Live Reviews
 //   • Review project progress with teacher
-//   [Wed - Thu]: ** Unit 3 Quiz     (* = check-in, ** = grade)
+//   [Wed - Thu]: ** Unit 3 Quiz
+//
+// Asterisks set the priority, more meaning more important: none = P2,
+// * = P1, ** = P0. As in the Slack importer they also mark the type
+// (* = check-in, ** = graded).
 
 import { addDays, dayOffset, findSchoolWeek, mondayOf, toIsoDate, todayIso } from './school-weeks.js';
 
@@ -28,11 +32,11 @@ function capitalize(label) {
   return label.charAt(0).toUpperCase() + label.slice(1, 3).toLowerCase();
 }
 
-function typeFromMarker(marker, fallback) {
-  if (marker === '**') return 'grade';
-  if (marker === '*') return 'check-in';
-  return fallback;
-}
+const MARKERS = {
+  '**': { priority: 'P0', type: 'grade' },
+  '*': { priority: 'P1', type: 'check-in' },
+};
+const PLAIN = { priority: 'P2', type: 'daily plan' };
 
 // "9/28" has no year: pick the one that keeps it inside the school year
 // ("2026-2027" → Aug–Dec is 2026, Jan–Jul is 2027).
@@ -84,7 +88,7 @@ export function parseQuickSyntax(text, options = {}) {
       entries.push({
         key: `line-${entries.length}`,
         title,
-        type: typeFromMarker(day[3], 'daily plan'),
+        ...(MARKERS[day[3]] || PLAIN),
         description: '',
         dayLabel: startLabel === endLabel ? startLabel : `${startLabel}–${endLabel}`,
         dates: datesBetween(week.monday, startLabel, endLabel),
@@ -96,7 +100,7 @@ export function parseQuickSyntax(text, options = {}) {
     if (bullet && last) {
       const detail = (bullet[2] || bullet[3] || '').trim();
       last.description = last.description ? `${last.description}\n${detail}` : detail;
-      last.type = typeFromMarker(bullet[1], last.type);
+      if (MARKERS[bullet[1]]) Object.assign(last, MARKERS[bullet[1]]);
     }
   });
 
