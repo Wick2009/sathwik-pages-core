@@ -52,3 +52,27 @@ The toolbar has demo toggles:
 - Only the UI enforces teacher-only. The backend doesn't check roles on the calendar or chat endpoints yet.
 - Events are all-day. Priority is stored as a `[P0]`–`[P3]` title prefix, which is how the calendar page reads it. Periods go in the backend's existing `classPeriod` field (for example `P3,P4`).
 - The link between an announcement and its event is a hidden text marker inside the message. It works with today's chat backend without schema changes.
+
+## What it looks like
+
+*Captured from Preview mode (sample data).*
+
+**Week view** above the feed, with the demo toggles. Here it's CSP as a period 3 student, so the period-4-only office hours on Wednesday is hidden.
+
+![Week view with Class, Period, View as and Preview toggles]({{site.baseurl}}/images/announcement-calendar/week-view.png)
+
+**V1: Add-to-calendar button.** The form under the composer, then the posted announcement with its event card.
+
+![V1 form: title, date, type, details, quick dates, priority and periods]({{site.baseurl}}/images/announcement-calendar/v1-form.png)
+
+![V1 posted announcement with its event card]({{site.baseurl}}/images/announcement-calendar/v1-posted.png)
+
+**V2: Quick syntax.** Detected events show up while you type. After Send, only your own words are posted and each event is a card.
+
+![V2 composer with the example, detected events and the syntax help]({{site.baseurl}}/images/announcement-calendar/v2-typing.png)
+
+![V2 posted message: one line of text and six event cards]({{site.baseurl}}/images/announcement-calendar/v2-posted.png)
+
+**Student view, period 3.** There are no calendar controls or delete buttons, and the period-4-only event is dimmed.
+
+![Student view filtered to period 3]({{site.baseurl}}/images/announcement-calendar/student-period-3.png)
