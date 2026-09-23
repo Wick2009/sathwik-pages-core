@@ -4,7 +4,7 @@
 // Send posts the message as written and creates one calendar event per day.
 
 import { appendEventMarkers } from '../event-marker.js';
-import { parseQuickSyntax, QUICK_SYNTAX_EXAMPLE } from '../quick-syntax.js';
+import { buildQuickSyntaxExample, parseQuickSyntax } from '../quick-syntax.js';
 import { formatShortDate } from '../school-weeks.js';
 import { EVENT_TYPES, TYPE_LABELS } from '../event-options.js';
 import { escapeHtml } from '../html.js';
@@ -69,7 +69,7 @@ export function mountQuickSyntax(ctx) {
   }
 
   panel.querySelector('.quick-syntax-example').addEventListener('click', () => {
-    ctx.composer.editor.innerHTML = QUICK_SYNTAX_EXAMPLE.split('\n').map(escapeHtml).join('<br>');
+    ctx.composer.editor.innerHTML = buildQuickSyntaxExample(ctx.weeks).split('\n').map(escapeHtml).join('<br>');
     ctx.composer.editor.dispatchEvent(new Event('input'));
     ctx.composer.focus();
   });

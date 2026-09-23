@@ -11,7 +11,9 @@
 //   [10/9]: Unit 4 FRQ #due #P3        (a date, and #tags for type / priority)
 
 import { DEFAULT_PRIORITY, EVENT_TYPES, PRIORITIES } from './event-options.js';
-import { addDays, dayOffset, findSchoolWeek, mondayOf, toIsoDate, todayIso } from './school-weeks.js';
+import {
+  addDays, dayOffset, findSchoolWeek, mondayOf, neighborWeek, toIsoDate, todayIso,
+} from './school-weeks.js';
 
 const DAY = '(Mon|Tue|Wed|Thu|Fri|Sat|Sun)';
 const DAY_LINE = new RegExp(`^\\s*\\[${DAY}(?:\\s*-\\s*${DAY})?\\]:\\s*(\\*\\*|\\*)?\\s*(.+)$`, 'i');
@@ -21,14 +23,26 @@ const WEEK_OF = /week of\s+(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/i;
 const WEEK_NUMBER = /^\s*week\s+(\d{1,2})\b/im;
 const TAG = /(^|\s)#([\w-]+)/g;
 
-export const QUICK_SYNTAX_EXAMPLE = [
-  'Week of 9/28',
-  '[Mon]: Live Reviews',
-  '• Review project progress with teacher',
-  '[Wed - Thu]: ** Unit 3 Quiz',
-  '[Fri]: * Sprint check-in',
-  '[10/9]: Unit 4 FRQ #due #P3',
-].join('\n');
+const monthDay = (iso) => `${Number(iso.slice(5, 7))}/${Number(iso.slice(8, 10))}`;
+
+// "Insert example" shows every option at once: each way to say when (day,
+// range, date), a description, all five types and all four priorities.
+// Dates come from the school calendar (next school week, and the Friday
+// after it) so the example never points at the past.
+export function buildQuickSyntaxExample(weeks = [], today = todayIso()) {
+  const current = findSchoolWeek(weeks, today);
+  const next = current && (current.monday > today ? current : neighborWeek(weeks, current, 1) || current);
+  const after = next && (neighborWeek(weeks, next, 1) || next);
+  return [
+    `Week of ${next ? monthDay(next.monday) : monthDay(addDays(mondayOf(today), 7))}`,
+    '[Mon]: Live Reviews',
+    '• Review project progress with teacher',
+    '[Tue]: Guest speaker from AWS #event #P1',
+    '[Wed - Thu]: ** Unit 3 Quiz',
+    '[Fri]: * Sprint check-in',
+    `[${after ? monthDay(after.friday) : monthDay(addDays(mondayOf(today), 18))}]: Unit 4 FRQ #due #P3`,
+  ].join('\n');
+}
 
 // Asterisks are a shortcut for priority (and, as in Slack, for the type).
 const MARKERS = {
