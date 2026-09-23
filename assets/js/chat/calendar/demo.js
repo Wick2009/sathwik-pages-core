@@ -75,7 +75,7 @@ const feed = createChatFeed({
   messagesEl: $('.chat-messages'),
   getSelfName: selfName,
   renderEvents: (events) => renderEventCards(events, {
-    store: () => state.store, isTeacher, course, calendarUrl, sourceUrl,
+    store: () => state.store, isTeacher, calendarUrl,
   }),
 });
 

@@ -131,7 +131,7 @@ $announcement-priority-colors: (
     background: rgba($accent, 0.05);
     @include announcement-priority-accent(border-left-color);
 
-    // Several events in one announcement: one line each (date, title, tags, icon actions).
+    // Several events in one announcement: one line each (date, title, tags, actions).
     &.is-compact {
       align-items: center;
       padding: 6px 10px;
@@ -208,8 +208,6 @@ $announcement-priority-colors: (
     text-decoration: none;
     span { white-space: nowrap; }
   }
-
-  .event-cards-footer { display: flex; justify-content: flex-end; }
 
   /* ── V1: attach-event panel ───────────────────────────────────── */
   .calendar-attach-toggle {
@@ -526,7 +524,6 @@ $announcement-priority-colors: (
     .week-strip-days { grid-template-columns: repeat(5, minmax(56px, 1fr)); overflow-x: auto; }
     .week-strip-day { min-height: 64px; }
     .week-strip-event { font-size: 10px; }
-    .event-card-action span { display: none; }
   }
 }
 

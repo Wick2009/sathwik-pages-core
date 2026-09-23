@@ -23,7 +23,7 @@ Switch between them with the tabs. Use **View as** to see the teacher view and t
 | **V2: Quick syntax** | Type `[Mon]: Title` lines, the same format as Slack. Detected events appear as chips you can switch off | Posting a whole week's plan at once |
 | **V3: Calendar-first** | Click a day in the week strip, then **Add & announce**. The announcement posts itself | Keeping the week visible to students all the time |
 
-In every version, an announcement that carries an event shows a card with **Add to my calendar** (an `.ics` file for Apple, Outlook or Google), **Google Calendar**, and **View on calendar**. Teachers also get **Remove from calendar**.
+In every version, an announcement that carries an event shows a card with a **View on OCS calendar** button. Teachers also get **Remove from calendar**.
 
 **Preview** (the default) uses a sample week stored in your browser, so nothing reaches the class or the real calendar. **Reset** restores the sample. **Live** needs a sign-in. It posts to a separate `csa-announcements-demo` chat and adds real events to the CSA calendar.
 
