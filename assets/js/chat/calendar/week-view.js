@@ -1,8 +1,10 @@
 // Week view: a compact, read-only look at the current school week, pinned
 // above the announcements. It works with either composer version and can be
 // toggled from the chat header. Clicking an event jumps to the announcement
-// that created it.
+// that created it. Events for other class periods are hidden when the viewer
+// picks a period.
 
+import { eventMatchesPeriod, formatPeriods } from './event-options.js';
 import { escapeHtml } from './html.js';
 import { findSchoolWeek, fromIsoDate, neighborWeek, schoolWeekDays, todayIso } from './school-weeks.js';
 
@@ -13,7 +15,7 @@ function weekRangeLabel(week) {
   return `Week ${week.index} · ${format(week.monday)} – ${format(week.friday)}`;
 }
 
-export function mountWeekView({ slot, weeks, getStore, feed }) {
+export function mountWeekView({ slot, weeks, getStore, getPeriod, feed }) {
   const today = todayIso();
   let week = findSchoolWeek(weeks, today);
 
@@ -34,7 +36,7 @@ export function mountWeekView({ slot, weeks, getStore, feed }) {
     chip.type = 'button';
     chip.className = 'week-view-event';
     chip.dataset.priority = event.priority;
-    chip.title = `${event.title}: show the announcement`;
+    chip.title = [event.title, formatPeriods(event.periods)].filter(Boolean).join(' · ');
     chip.textContent = event.title;
     chip.addEventListener('click', () => {
       if (!feed.revealEvent(event.id)) chip.title = `${event.title}: no announcement for this one`;
@@ -47,10 +49,11 @@ export function mountWeekView({ slot, weeks, getStore, feed }) {
     root.querySelector('.week-view-range').textContent = weekRangeLabel(week);
     root.querySelector('.week-view-note').textContent = [week.theme, week.notes].filter(Boolean).join(' · ');
     const store = getStore();
-    const [events, breaks] = await Promise.all([
+    const [allEvents, breaks] = await Promise.all([
       store.listRange(week.monday, week.friday),
       store.listBreaks().catch(() => []),
     ]);
+    const events = allEvents.filter((event) => eventMatchesPeriod(event, getPeriod()));
     const breakByDate = new Map(breaks.map((b) => [b.date, b.name]));
 
     daysEl.innerHTML = '';
@@ -84,6 +87,7 @@ export function mountWeekView({ slot, weeks, getStore, feed }) {
   load();
 
   return {
+    refresh: load,
     unmount() {
       unsubscribe();
       unlisten();

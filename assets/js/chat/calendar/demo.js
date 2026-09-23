@@ -1,14 +1,15 @@
 // Entry point for _includes/announcement_calendar_demo.html.
-// Owns the pieces every version shares (composer, feed, store, transport,
-// week view) and swaps the version-specific composer UI in and out when the
-// switcher changes.
+// Owns the pieces both versions share (composer, feed, store, transport,
+// week view) and the demo toggles (version, class, period, role, data
+// source); swaps the version-specific composer UI in and out.
 
 import { fetchOptions, javaURI } from '../../api/config.js';
 import { createRichComposer } from '../rich-text.js';
 import { createLiveCalendarStore, createPreviewCalendarStore } from './calendar-store.js';
 import { createChatFeed } from './chat-feed.js';
 import { createLiveTransport, createPreviewTransport } from './chat-transport.js';
-import { renderEventCards } from './event-card.js';
+import { markCardsForPeriod, renderEventCards } from './event-card.js';
+import { COURSES, coursePeriods } from './event-options.js';
 import { fetchLiveIdentity } from './identity.js';
 import { buildPreviewSeed, DEMO_STUDENT, DEMO_TEACHER } from './preview-seed.js';
 import { parseSchoolCalendar } from './school-weeks.js';
@@ -19,35 +20,39 @@ import { mountWeekView } from './week-view.js';
 const VERSIONS = {
   1: {
     mount: mountAttachForm,
-    summary: 'Write the announcement as usual, click Add to calendar and pick a date. Send posts the message and creates the event together.',
+    summary: 'Write the announcement as usual, click Add to calendar and fill in the event. Send posts the message and creates the event together.',
   },
   2: {
     mount: mountQuickSyntax,
-    summary: 'Type the weekly plan the way it used to go in Slack. Every [Day]: Title line is detected as you type, and each one becomes a calendar event when you send.',
+    summary: 'Type the weekly plan the way it used to go in Slack. Every [Day]: Title line is detected as you type; on Send each one becomes a calendar event card and the syntax lines are left out of the message.',
   },
 };
 
 const root = document.getElementById('announcementCalendarDemo');
-const course = root.dataset.course || 'csa';
 const calendarUrl = `${root.dataset.baseurl || ''}/student/calendar`;
 const sourceUrl = `${window.location.origin}${window.location.pathname}`;
-const storagePrefix = `ocs-announcement-calendar-demo:${course}`;
 const { schoolYear, weeks } = parseSchoolCalendar(
   JSON.parse(document.getElementById('announcementCalendarSchool').textContent),
 );
+const params = new URLSearchParams(window.location.search);
 
 const $ = (selector) => root.querySelector(selector);
 const slots = {
   composerTools: $('[data-slot="composer-tools"]'),
   composerPanel: $('[data-slot="composer-panel"]'),
 };
+const messagesEl = $('.chat-messages');
 const weekViewSlot = $('[data-slot="week-view"]');
 const weekViewToggle = $('.week-view-toggle');
+const periodFilterEl = $('[data-period-filter]');
 const formEl = $('.chat-form');
 const sendBtn = $('.chat-send');
 
+const knownCourse = (value) => COURSES.some((c) => c.value === value);
 const state = {
-  version: Number(new URLSearchParams(window.location.search).get('v')) || 1,
+  version: VERSIONS[Number(params.get('v'))] ? Number(params.get('v')) : 1,
+  course: [params.get('class'), root.dataset.course].find(knownCourse) || 'csa',
+  period: 'all',
   role: 'teacher',
   mode: 'preview',
   liveIdentity: null,
@@ -59,11 +64,12 @@ const state = {
   sending: false,
 };
 
+const storagePrefix = () => `ocs-announcement-calendar-demo:${state.course}`;
 const isTeacher = () => (state.mode === 'live' ? state.liveIdentity.isTeacher : state.role === 'teacher');
 const selfName = () => (state.mode === 'live' ? state.liveIdentity.name : (state.role === 'teacher' ? DEMO_TEACHER : DEMO_STUDENT));
 
 const composer = createRichComposer({
-  placeholder: `Message the ${course.toUpperCase()} class…`,
+  placeholder: 'Message the class…',
   maxLength: 2000,
   onSubmit: submit,
   onInput: () => state.variant?.onComposerInput?.(),
@@ -72,12 +78,11 @@ formEl.classList.add('chat-form--rich');
 formEl.insertBefore(composer.element, sendBtn);
 
 const feed = createChatFeed({
-  messagesEl: $('.chat-messages'),
+  messagesEl,
   getSelfName: selfName,
-  renderEvents: (events) => renderEventCards(events, {
-    store: () => state.store, isTeacher, calendarUrl,
-  }),
+  renderEvents: (events) => renderEventCards(events, { store: () => state.store, isTeacher, calendarUrl }),
 });
+feed.onMessage(({ events }) => { if (events.length) markCardsForPeriod(messagesEl, state.period); });
 
 function send(html) {
   return state.transport.send({ sender: selfName(), message: html });
@@ -116,19 +121,30 @@ function mountVersion() {
   state.variant?.unmount();
   Object.values(slots).forEach((slot) => { slot.innerHTML = ''; });
   state.variant = VERSIONS[state.version].mount({
-    course, weeks, schoolYear, slots, composer, feed, send, isTeacher, getStore: () => state.store,
+    course: state.course,
+    coursePeriods: coursePeriods(state.course),
+    weeks,
+    schoolYear,
+    slots,
+    composer,
+    feed,
+    send,
+    isTeacher,
+    getStore: () => state.store,
   });
 }
 
 // The week view reads from the current store, so it is remounted whenever
-// the data source changes, and independently of the composer version.
+// the data source or class changes, independently of the composer version.
 function mountWeekViewIfOn() {
   state.weekView?.unmount();
   state.weekView = null;
   weekViewSlot.hidden = !state.weekViewOn;
   weekViewToggle.setAttribute('aria-pressed', String(state.weekViewOn));
   if (state.weekViewOn) {
-    state.weekView = mountWeekView({ slot: weekViewSlot, weeks, getStore: () => state.store, feed });
+    state.weekView = mountWeekView({
+      slot: weekViewSlot, weeks, getStore: () => state.store, getPeriod: () => state.period, feed,
+    });
   }
 }
 
@@ -136,10 +152,11 @@ async function startMode(mode) {
   state.transport?.stop();
   feed.reset();
   state.mode = mode;
+  const { course } = state;
   if (mode === 'preview') {
-    const seed = buildPreviewSeed({ weeks, course });
-    state.store = createPreviewCalendarStore({ course, storageKey: `${storagePrefix}:events`, seedEvents: seed.events });
-    state.transport = createPreviewTransport({ storageKey: `${storagePrefix}:messages`, seedMessages: seed.messages });
+    const seed = buildPreviewSeed({ weeks, course, periods: coursePeriods(course) });
+    state.store = createPreviewCalendarStore({ course, storageKey: `${storagePrefix()}:events`, seedEvents: seed.events });
+    state.transport = createPreviewTransport({ storageKey: `${storagePrefix()}:messages`, seedMessages: seed.messages });
     setStatus('preview', 'is-preview');
     showNote('Preview mode: sample data kept in this browser. Nothing is sent to the class or the real calendar.');
   } else {
@@ -161,28 +178,53 @@ async function startMode(mode) {
   }
 }
 
+// Period filter: "All" plus the periods this class meets in (CSP → 3, 4).
+function renderPeriodFilter() {
+  const options = ['all', ...coursePeriods(state.course)];
+  periodFilterEl.innerHTML = '<span class="announcement-calendar-segment-label">Period</span>'
+    + options.map((p) => `<button type="button" role="radio" data-view-period="${p}">${p === 'all' ? 'All' : p}</button>`).join('');
+  periodFilterEl.querySelectorAll('[data-view-period]').forEach((button) => button.addEventListener('click', () => {
+    state.period = button.dataset.viewPeriod;
+    syncControls();
+    markCardsForPeriod(messagesEl, state.period);
+    state.weekView?.refresh();
+  }));
+}
+
 function syncControls() {
-  root.querySelectorAll('[data-version]').forEach((tab) => {
-    tab.setAttribute('aria-selected', String(Number(tab.dataset.version) === state.version));
+  const checked = (selector, key, value) => root.querySelectorAll(selector).forEach((el) => {
+    el.setAttribute(el.getAttribute('role') === 'tab' ? 'aria-selected' : 'aria-checked', String(el.dataset[key] === String(value)));
   });
-  root.querySelectorAll('[data-role]').forEach((button) => {
-    button.setAttribute('aria-checked', String(button.dataset.role === state.role));
-    button.disabled = state.mode === 'live';
-  });
-  root.querySelectorAll('[data-mode]').forEach((button) => {
-    button.setAttribute('aria-checked', String(button.dataset.mode === state.mode));
-  });
+  checked('[data-version]', 'version', state.version);
+  checked('[data-course]', 'course', state.course);
+  checked('[data-view-period]', 'viewPeriod', state.period);
+  checked('[data-role]', 'role', state.role);
+  checked('[data-mode]', 'mode', state.mode);
+  root.querySelectorAll('[data-role]').forEach((button) => { button.disabled = state.mode === 'live'; });
   $('.announcement-calendar-summary').textContent = VERSIONS[state.version].summary;
-  root.dataset.version = String(state.version);
+  $('.chat-title').textContent = `${state.course.toUpperCase()} Announcements`;
+}
+
+function setUrlParam(key, value) {
+  const url = new URL(window.location.href);
+  url.searchParams.set(key, String(value));
+  window.history.replaceState(null, '', url);
 }
 
 root.querySelectorAll('[data-version]').forEach((tab) => tab.addEventListener('click', () => {
   state.version = Number(tab.dataset.version);
-  const url = new URL(window.location.href);
-  url.searchParams.set('v', String(state.version));
-  window.history.replaceState(null, '', url);
+  setUrlParam('v', state.version);
   syncControls();
   mountVersion();
+}));
+
+root.querySelectorAll('[data-course]').forEach((button) => button.addEventListener('click', () => {
+  if (button.dataset.course === state.course) return;
+  state.course = button.dataset.course;
+  state.period = 'all';
+  setUrlParam('class', state.course);
+  renderPeriodFilter();
+  startMode(state.mode);
 }));
 
 // Switching role re-renders the feed so "You" and the teacher-only controls follow.
@@ -209,8 +251,8 @@ weekViewToggle.addEventListener('click', () => {
 
 $('.announcement-calendar-reset').addEventListener('click', () => {
   try {
-    window.localStorage.removeItem(`${storagePrefix}:events`);
-    window.localStorage.removeItem(`${storagePrefix}:messages`);
+    window.localStorage.removeItem(`${storagePrefix()}:events`);
+    window.localStorage.removeItem(`${storagePrefix()}:messages`);
   } catch (_) { /* storage blocked: the reseed below is still in memory */ }
   startMode('preview');
 });
@@ -218,5 +260,5 @@ $('.announcement-calendar-reset').addEventListener('click', () => {
 formEl.addEventListener('submit', (e) => { e.preventDefault(); submit(); });
 window.addEventListener('beforeunload', () => state.transport?.stop());
 
-if (!VERSIONS[state.version]) state.version = 1;
+renderPeriodFilter();
 startMode('preview');

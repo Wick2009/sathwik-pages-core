@@ -1,8 +1,10 @@
 // The card shown under an announcement that created calendar events. It is
-// the same in every demo version: everyone can open the event on the OCS
+// the same in both demo versions: everyone can open the event on the OCS
 // calendar, and teachers can also take it back off the class calendar.
 
-import { TYPE_LABELS } from './event-options.js';
+import {
+  eventMatchesPeriod, formatPeriods, PRIORITY_LABELS, TYPE_LABELS,
+} from './event-options.js';
 import { fromIsoDate } from './school-weeks.js';
 
 function el(tag, className, text) {
@@ -53,17 +55,20 @@ function removeButton(event, store, onRemoved, status) {
 function renderCard(event, { store, isTeacher, calendarUrl }, compact) {
   const card = el('div', `event-card${compact ? ' is-compact' : ''}`);
   card.dataset.priority = event.priority;
+  card.dataset.periods = (event.periods || []).join(' ');
 
   const info = el('div', 'event-card-info');
   info.appendChild(el('div', 'event-card-title', event.title));
   const tags = el('div', 'event-card-tags');
   const status = el('span', 'event-card-status', 'On class calendar');
   tags.append(
-    el('span', 'event-card-chip event-card-chip--priority', event.priority),
+    el('span', 'event-card-chip event-card-chip--priority', PRIORITY_LABELS[event.priority] || event.priority),
     el('span', 'event-card-chip', TYPE_LABELS[event.type] || event.type),
-    status,
   );
+  if (event.periods?.length) tags.appendChild(el('span', 'event-card-chip event-card-chip--period', formatPeriods(event.periods)));
+  tags.appendChild(status);
   info.appendChild(tags);
+  if (event.description) info.appendChild(el('p', 'event-card-description', event.description));
 
   const markRemoved = () => {
     card.classList.add('is-removed');
@@ -88,4 +93,12 @@ export function renderEventCards(events, context) {
     .sort((a, b) => a.date.localeCompare(b.date))
     .forEach((event) => wrapper.appendChild(renderCard(event, context, compact)));
   return wrapper;
+}
+
+// Dim cards for other class periods when the viewer picks a period ("all" = none dimmed).
+export function markCardsForPeriod(container, period) {
+  container.querySelectorAll('.event-card').forEach((card) => {
+    const periods = card.dataset.periods ? card.dataset.periods.split(' ') : [];
+    card.classList.toggle('is-other-period', !eventMatchesPeriod({ periods }, period));
+  });
 }

@@ -4,8 +4,10 @@
 // Pattern follows the /calendar modal in _includes/group_dashboard.html.
 
 import { appendEventMarkers } from '../event-marker.js';
+import {
+  CLASS_PERIODS, DEFAULT_PRIORITY, EVENT_TYPES, PRIORITIES,
+} from '../event-options.js';
 import { addDays, formatShortDate, nextSchoolDay, quickDateChoices, todayIso } from '../school-weeks.js';
-import { DEFAULT_PRIORITY, EVENT_TYPES, PRIORITIES } from '../event-options.js';
 
 function firstLine(text) {
   return String(text || '').split('\n').map((line) => line.trim()).find(Boolean)?.slice(0, 80) || '';
@@ -41,11 +43,19 @@ export function mountAttachForm(ctx) {
       <label class="calendar-field">Type
         <select name="type">${EVENT_TYPES.map((t) => `<option value="${t.value}">${t.label}</option>`).join('')}</select>
       </label>
+      <label class="calendar-field calendar-field--full">Details (optional)
+        <input type="text" name="description" maxlength="300" placeholder="e.g. One page of handwritten notes allowed">
+      </label>
     </div>
     <div class="calendar-quick-dates" role="group" aria-label="Quick dates"></div>
-    <div class="calendar-priority" role="radiogroup" aria-label="Priority">
-      <span class="calendar-priority-label">Priority</span>
-      ${PRIORITIES.map((p) => `<button type="button" class="calendar-priority-option" data-priority="${p}" role="radio" aria-checked="${p === DEFAULT_PRIORITY}">${p}</button>`).join('')}
+    <div class="calendar-choice-row" role="radiogroup" aria-label="Priority">
+      <span class="calendar-choice-label">Priority</span>
+      ${PRIORITIES.map((p) => `<button type="button" class="calendar-priority-option" data-priority="${p.value}" role="radio" aria-checked="${p.value === DEFAULT_PRIORITY}">${p.label}</button>`).join('')}
+    </div>
+    <div class="calendar-choice-row" role="group" aria-label="Class periods">
+      <span class="calendar-choice-label">Periods</span>
+      ${CLASS_PERIODS.map((p) => `<button type="button" class="calendar-period-option" data-period="${p}" aria-pressed="${ctx.coursePeriods.includes(p)}">${p}</button>`).join('')}
+      <span class="calendar-choice-hint">none selected = every period</span>
     </div>
     <p class="calendar-attach-hint">Send posts the announcement <em>and</em> adds an all-day event to the ${ctx.course.toUpperCase()} calendar.</p>
     <p class="calendar-attach-error" role="alert" hidden></p>`;
@@ -54,6 +64,7 @@ export function mountAttachForm(ctx) {
   const titleInput = panel.querySelector('[name="title"]');
   const dateInput = panel.querySelector('[name="date"]');
   const typeSelect = panel.querySelector('[name="type"]');
+  const descriptionInput = panel.querySelector('[name="description"]');
   const errorEl = panel.querySelector('.calendar-attach-error');
   let priority = DEFAULT_PRIORITY;
 
@@ -73,6 +84,15 @@ export function mountAttachForm(ctx) {
         .forEach((o) => o.setAttribute('aria-checked', String(o === option)));
     });
   });
+
+  const periodButtons = [...panel.querySelectorAll('.calendar-period-option')];
+  periodButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      button.setAttribute('aria-pressed', String(button.getAttribute('aria-pressed') !== 'true'));
+    });
+  });
+  const selectedPeriods = () => periodButtons
+    .filter((b) => b.getAttribute('aria-pressed') === 'true').map((b) => b.dataset.period);
 
   function setOpen(open) {
     panel.hidden = !open;
@@ -99,7 +119,12 @@ export function mountAttachForm(ctx) {
       if (!dateInput.value) { showError('Pick a date for the event.'); return null; }
       try {
         const event = await ctx.getStore().createEvent({
-          title, date: dateInput.value, type: typeSelect.value, priority, description: firstLine(ctx.composer.editor.innerText),
+          title,
+          date: dateInput.value,
+          type: typeSelect.value,
+          priority,
+          periods: selectedPeriods(),
+          description: descriptionInput.value.trim(),
         });
         return { html: appendEventMarkers(html, [event]) };
       } catch (err) {
@@ -110,6 +135,7 @@ export function mountAttachForm(ctx) {
     },
     afterSend() {
       titleInput.value = '';
+      descriptionInput.value = '';
       dateInput.value = defaultDate;
       setOpen(false);
     },

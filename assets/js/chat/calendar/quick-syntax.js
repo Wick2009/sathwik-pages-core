@@ -2,15 +2,21 @@
 // parsed in the browser. The day-line regex and the asterisk markers are
 // ported from Open-Coding-Society/spring CalendarEventService.extractEventsFromText
 // so an announcement produces the same events a Slack post used to. On top of
-// that it can set everything the V1 form can (any date, every type, P0–P3):
+// that it can set everything the V1 form can (any date, type, priority, periods):
 //
+//   Here's the plan for next week:     (plain text stays in the message)
 //   Week of 9/28                       (or "Week 7"; optional, defaults to this school week)
 //   [Mon]: Live Reviews
 //   • Review project progress with teacher
-//   [Wed - Thu]: ** Unit 3 Quiz        (* = P1 check-in, ** = P0 graded)
-//   [10/9]: Unit 4 FRQ #due #P3        (a date, and #tags for type / priority)
+//   [Wed - Thu]: ** Unit 3 Quiz        (* = high check-in, ** = urgent graded)
+//   [10/9]: Unit 4 FRQ #due #low #P4   (a date, and #tags for type / priority / period)
+//
+// Event lines, their • details and the "Week of" line are the syntax; they
+// become calendar events and are left out of the posted message.
 
-import { DEFAULT_PRIORITY, EVENT_TYPES, PRIORITIES } from './event-options.js';
+import {
+  CLASS_PERIODS, DEFAULT_PRIORITY, EVENT_TYPES, PRIORITIES,
+} from './event-options.js';
 import {
   addDays, dayOffset, findSchoolWeek, mondayOf, neighborWeek, toIsoDate, todayIso,
 } from './school-weeks.js';
@@ -21,28 +27,11 @@ const DATE_LINE = /^\s*\[(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\]:\s*(\*\*|\*)?\s*
 const BULLET_LINE = /^\s*(\*\*|\*)?\s*[•·]\s*(.+)$|^\s*-\s+(.+)$/;
 const WEEK_OF = /week of\s+(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/i;
 const WEEK_NUMBER = /^\s*week\s+(\d{1,2})\b/im;
+// A line that is only a week header ("Week of 9/28", "Week 7:") is syntax;
+// a sentence that mentions a week ("plan for the week of 9/28") is not.
+const WEEK_HEADER_LINE = /^\s*week\s+(?:of\s+\d{1,2}\/\d{1,2}(?:\/\d{2,4})?|\d{1,2})\s*:?\s*$/i;
 const TAG = /(^|\s)#([\w-]+)/g;
-
-const monthDay = (iso) => `${Number(iso.slice(5, 7))}/${Number(iso.slice(8, 10))}`;
-
-// "Insert example" shows every option at once: each way to say when (day,
-// range, date), a description, all five types and all four priorities.
-// Dates come from the school calendar (next school week, and the Friday
-// after it) so the example never points at the past.
-export function buildQuickSyntaxExample(weeks = [], today = todayIso()) {
-  const current = findSchoolWeek(weeks, today);
-  const next = current && (current.monday > today ? current : neighborWeek(weeks, current, 1) || current);
-  const after = next && (neighborWeek(weeks, next, 1) || next);
-  return [
-    `Week of ${next ? monthDay(next.monday) : monthDay(addDays(mondayOf(today), 7))}`,
-    '[Mon]: Live Reviews',
-    '• Review project progress with teacher',
-    '[Tue]: Guest speaker from AWS #event #P1',
-    '[Wed - Thu]: ** Unit 3 Quiz',
-    '[Fri]: * Sprint check-in',
-    `[${after ? monthDay(after.friday) : monthDay(addDays(mondayOf(today), 18))}]: Unit 4 FRQ #due #P3`,
-  ].join('\n');
-}
+const PERIOD_TAG = /^p(\d)$/;
 
 // Asterisks are a shortcut for priority (and, as in Slack, for the type).
 const MARKERS = {
@@ -52,6 +41,30 @@ const MARKERS = {
 const PLAIN = { priority: DEFAULT_PRIORITY, type: 'daily plan' };
 
 const TYPE_BY_TAG = new Map(EVENT_TYPES.flatMap((type) => type.tags.map((tag) => [tag, type.value])));
+const PRIORITY_BY_TAG = new Map(PRIORITIES.flatMap((p) => p.tags.map((tag) => [tag, p.value])));
+
+const monthDay = (iso) => `${Number(iso.slice(5, 7))}/${Number(iso.slice(8, 10))}`;
+
+// "Insert example" shows every option at once: plain text that stays in the
+// message, each way to say when (day, range, date), a description, all five
+// types, all four priorities, and a period tag. Dates come from the school
+// calendar (next school week, and the Friday after) so it never points at the past.
+export function buildQuickSyntaxExample(weeks = [], { today = todayIso(), periods = [] } = {}) {
+  const current = findSchoolWeek(weeks, today);
+  const next = current && (current.monday > today ? current : neighborWeek(weeks, current, 1) || current);
+  const after = next && (neighborWeek(weeks, next, 1) || next);
+  const periodTag = periods.length ? ` #P${periods[periods.length - 1]}` : '';
+  return [
+    "Here's the plan for next week:",
+    `Week of ${next ? monthDay(next.monday) : monthDay(addDays(mondayOf(today), 7))}`,
+    '[Mon]: Live Reviews',
+    '• Review project progress with teacher',
+    '[Tue]: Guest speaker from AWS #event #high',
+    '[Wed - Thu]: ** Unit 3 Quiz',
+    '[Fri]: * Sprint check-in',
+    `[${after ? monthDay(after.friday) : monthDay(addDays(mondayOf(today), 18))}]: Unit 4 FRQ #due #low${periodTag}`,
+  ].join('\n');
+}
 
 function capitalize(label) {
   return label.charAt(0).toUpperCase() + label.slice(1, 3).toLowerCase();
@@ -94,27 +107,29 @@ function datesBetween(monday, startLabel, endLabel) {
   return dates;
 }
 
-// "Unit 4 FRQ #due #P3" → { title: 'Unit 4 FRQ', type: 'assignment', priority: 'P3' }.
+// "Unit 4 FRQ #due #low #P4" → { title: 'Unit 4 FRQ', type: 'assignment', priority: 'P3', periods: ['4'] }.
 // Unknown tags ("Quiz #2") stay in the title. Tags win over asterisks.
-function readTitleAndTags(rawTitle, marker) {
+function readTitleAndTags(rawTitle, marker, defaultPeriods) {
   const fields = { ...(MARKERS[marker] || PLAIN) };
+  const periods = [];
   const title = rawTitle.replace(TAG, (match, lead, word) => {
     const tag = word.toLowerCase();
-    const priority = tag.toUpperCase();
-    if (PRIORITIES.includes(priority)) { fields.priority = priority; return lead; }
+    const period = tag.match(PERIOD_TAG)?.[1];
+    if (period && CLASS_PERIODS.includes(period)) { if (!periods.includes(period)) periods.push(period); return lead; }
+    if (PRIORITY_BY_TAG.has(tag)) { fields.priority = PRIORITY_BY_TAG.get(tag); return lead; }
     if (TYPE_BY_TAG.has(tag)) { fields.type = TYPE_BY_TAG.get(tag); return lead; }
     return match;
   }).replace(/\*+\s*$/, '').replace(/\s{2,}/g, ' ').trim();
-  return { title, ...fields };
+  return { title, ...fields, periods: periods.length ? periods.sort() : [...defaultPeriods] };
 }
 
-function parseEventLine(line, week, options) {
+function parseEventLine(line, week, context) {
   const day = line.match(DAY_LINE);
   if (day) {
     const startLabel = capitalize(day[1]);
     const endLabel = day[2] ? capitalize(day[2]) : startLabel;
     return {
-      ...readTitleAndTags(day[4], day[3]),
+      ...readTitleAndTags(day[4], day[3], context.defaultPeriods),
       fromWeekday: true,
       dayLabel: startLabel === endLabel ? startLabel : `${startLabel}–${endLabel}`,
       dates: datesBetween(week.monday, startLabel, endLabel),
@@ -123,36 +138,51 @@ function parseEventLine(line, week, options) {
   const dated = line.match(DATE_LINE);
   if (dated) {
     return {
-      ...readTitleAndTags(dated[5], dated[4]),
+      ...readTitleAndTags(dated[5], dated[4], context.defaultPeriods),
       fromWeekday: false,
       dayLabel: `${Number(dated[1])}/${Number(dated[2])}`,
-      dates: [isoFromMonthDay(dated[1], dated[2], dated[3], options)],
+      dates: [isoFromMonthDay(dated[1], dated[2], dated[3], context)],
     };
   }
   return null;
 }
 
-// Returns one entry per event line; a range line carries several dates and
-// becomes one calendar event per day, like the Slack importer did.
+// Returns one entry per event line (a range line carries several dates and
+// becomes one calendar event per day, like the Slack importer did), plus
+// `syntaxLines`: for each input line, whether it is syntax to leave out of
+// the posted message.
 export function parseQuickSyntax(text, options = {}) {
-  const context = { schoolYear: options.schoolYear || '', today: options.today || todayIso() };
+  const context = {
+    schoolYear: options.schoolYear || '',
+    today: options.today || todayIso(),
+    defaultPeriods: options.defaultPeriods || [],
+  };
   const week = resolveWeekStart(text, { ...options, ...context });
   const entries = [];
+  const syntaxLines = [];
+  let inEvent = false; // • lines only count as details right after an event line
 
   String(text || '').split(/\r?\n/).forEach((line) => {
     const entry = parseEventLine(line, week, context);
     if (entry) {
       if (entry.title) entries.push({ key: `line-${entries.length}`, description: '', ...entry });
+      syntaxLines.push(true);
+      inEvent = true;
       return;
     }
     const bullet = line.match(BULLET_LINE);
     const last = entries[entries.length - 1];
-    if (bullet && last) {
+    if (bullet && last && inEvent) {
       const detail = (bullet[2] || bullet[3] || '').trim();
       last.description = last.description ? `${last.description}\n${detail}` : detail;
       if (MARKERS[bullet[1]]) Object.assign(last, MARKERS[bullet[1]]);
+      syntaxLines.push(true);
+      return;
     }
+    const isHeader = WEEK_HEADER_LINE.test(line);
+    syntaxLines.push(isHeader);
+    if (!isHeader && line.trim()) inEvent = false;
   });
 
-  return { weekStart: week.monday, weekSource: week.source, entries };
+  return { weekStart: week.monday, weekSource: week.source, entries, syntaxLines };
 }

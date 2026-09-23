@@ -12,7 +12,7 @@ function hoursAgo(hours) {
   return new Date(Date.now() - hours * 3600 * 1000).toISOString();
 }
 
-export function buildPreviewSeed({ weeks, course, today = todayIso() }) {
+export function buildPreviewSeed({ weeks, course, periods = [], today = todayIso() }) {
   const week = findSchoolWeek(weeks, today);
   if (!week) return { events: [], messages: [] };
   const following = neighborWeek(weeks, week, 1) || week;
@@ -26,7 +26,10 @@ export function buildPreviewSeed({ weeks, course, today = todayIso() }) {
       description: 'One page of handwritten notes allowed' },
     { id: 'seed-4', date: nextSchoolDay(weeks, following.monday), title: 'Sprint kickoff', type: 'check-in', priority: 'P1',
       description: 'Bring your team board' },
-  ].map((event) => ({ ...event, course }));
+  ].map((event) => ({ ...event, course, periods: [...periods] }));
+  // With more than one period (CSP meets 3 and 4), office hours is only for the
+  // last one, so the Period filter has something to show.
+  if (periods.length > 1) events[1].periods = [periods[periods.length - 1]];
 
   const [reviews, officeHours, quiz, kickoff] = events;
   const messages = [

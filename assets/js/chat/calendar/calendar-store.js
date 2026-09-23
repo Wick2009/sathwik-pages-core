@@ -3,7 +3,7 @@
 //   live    → the existing Spring endpoints under /api/calendar (no backend changes)
 //   preview → sample events in localStorage, so the demo runs signed out
 //
-// Both return events normalized to { id, date, title, description, type, priority, course }.
+// Both return events normalized to { id, date, title, description, type, priority, periods, course }.
 
 const PRIORITY_PREFIX = /^\[(P[0-3])\]\s*/;
 const TITLE_EMOJI = '📅';
@@ -13,6 +13,10 @@ function normalizeDate(value) {
   if (Array.isArray(value)) return value.map((part, i) => String(part).padStart(i ? 2 : 4, '0')).join('-');
   return String(value || '').slice(0, 10);
 }
+
+// Class periods go in the backend's existing classPeriod string ("P3,P4").
+const toClassPeriod = (periods = []) => periods.map((p) => `P${p}`).join(',');
+const fromClassPeriod = (value) => (String(value || '').match(/\d/g) || []);
 
 // /student/calendar reads priority from a "[Px]" title prefix, so events are
 // stored as "[P2] 📅 Title" and unwrapped here for display.
@@ -26,6 +30,7 @@ export function normalizeBackendEvent(raw) {
     description: raw?.description || '',
     type: raw?.type || 'event',
     priority,
+    periods: fromClassPeriod(raw?.classPeriod),
     course: String(raw?.period || '').toLowerCase(),
     isBreak: Boolean(raw?.break || raw?.isBreak),
   };
@@ -63,7 +68,7 @@ export function createLiveCalendarStore({ course, javaURI, fetchOptions, sourceU
 
   return {
     mode: 'live',
-    async createEvent({ title, date, description = '', type = 'event', priority = 'P2' }) {
+    async createEvent({ title, date, description = '', type = 'event', priority = 'P2', periods = [] }) {
       const saved = await request('/add_event', {
         method: 'POST',
         body: JSON.stringify({
@@ -73,6 +78,7 @@ export function createLiveCalendarStore({ course, javaURI, fetchOptions, sourceU
             .filter(Boolean).join('\n\n'),
           type,
           period,
+          classPeriod: toClassPeriod(periods),
           // Blank = visible to everyone. Omitting it makes the backend default to
           // the teacher's uid, which hides the event from students.
           individual: '',
@@ -126,8 +132,10 @@ export function createPreviewCalendarStore({ course, storageKey, seedEvents = []
 
   return {
     mode: 'preview',
-    async createEvent({ title, date, description = '', type = 'event', priority = 'P2' }) {
-      const event = { id: `p${Date.now().toString(36)}${events.length}`, date, title, description, type, priority, course };
+    async createEvent({ title, date, description = '', type = 'event', priority = 'P2', periods = [] }) {
+      const event = {
+        id: `p${Date.now().toString(36)}${events.length}`, date, title, description, type, priority, periods, course,
+      };
       // Same upsert rule as the backend: same title + date replaces instead of duplicating.
       events = events.filter((e) => !(e.title === title && e.date === date)).concat(event);
       save();

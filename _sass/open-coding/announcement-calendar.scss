@@ -38,12 +38,12 @@ $announcement-priority-colors: (
   font-family: var(--pref-font-family);
 
   /* ── toolbar: version tabs, role + data-source toggles ─────────── */
+  // Two rows: version tabs, then the demo toggles.
   .announcement-calendar-toolbar {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
     margin-bottom: 8px;
   }
 
@@ -191,7 +191,27 @@ $announcement-priority-colors: (
     font-size: 11px;
   }
 
+  // Class periods are plain text on purpose: color is already used for priority.
+  .event-card-chip--period {
+    border-color: rgba($text, 0.35);
+    color: $text;
+    font-weight: 600;
+  }
+
   .event-card-status { color: $green; font-size: 11px; }
+
+  .event-card-description {
+    margin: 0;
+    color: $text-muted;
+    font-size: 12px;
+    line-height: 1.4;
+    white-space: pre-line;
+  }
+
+  .event-card.is-compact .event-card-description { flex-basis: 100%; }
+
+  // Period filter: events for other periods stay visible but step back.
+  .event-card.is-other-period { opacity: 0.35; }
 
   .event-card-actions {
     display: flex;
@@ -251,6 +271,8 @@ $announcement-priority-colors: (
     gap: 8px;
   }
 
+  .calendar-field--full { grid-column: 1 / -1; }
+
   .calendar-field {
     display: flex;
     flex-direction: column;
@@ -272,7 +294,7 @@ $announcement-priority-colors: (
   }
 
   .calendar-quick-dates,
-  .calendar-priority {
+  .calendar-choice-row {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -282,7 +304,14 @@ $announcement-priority-colors: (
 
   .calendar-quick-date { @include announcement-pill-button; font-size: 11px; }
 
-  .calendar-priority-label { color: $text-muted; font-size: 11px; }
+  .calendar-choice-label { min-width: 52px; color: $text-muted; font-size: 11px; }
+  .calendar-choice-hint { color: $text-muted; font-size: 11px; font-style: italic; }
+
+  .calendar-period-option {
+    @include announcement-pill-button;
+    min-width: 32px;
+    &[aria-pressed="true"] { background: rgba($accent, 0.15); border-color: $accent; color: $text; font-weight: 700; }
+  }
 
   .calendar-priority-option {
     @include announcement-pill-button;
