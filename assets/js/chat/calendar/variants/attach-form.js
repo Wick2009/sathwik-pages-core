@@ -5,10 +5,7 @@
 
 import { appendEventMarkers } from '../event-marker.js';
 import { addDays, formatShortDate, nextSchoolDay, quickDateChoices, todayIso } from '../school-weeks.js';
-import { TYPE_LABELS } from '../event-card.js';
-
-const PRIORITIES = ['P0', 'P1', 'P2', 'P3'];
-const TYPES = ['event', 'assignment', 'check-in', 'grade'];
+import { DEFAULT_PRIORITY, EVENT_TYPES, PRIORITIES } from '../event-options.js';
 
 function firstLine(text) {
   return String(text || '').split('\n').map((line) => line.trim()).find(Boolean)?.slice(0, 80) || '';
@@ -42,13 +39,13 @@ export function mountAttachForm(ctx) {
         <input type="date" name="date" value="${defaultDate}">
       </label>
       <label class="calendar-field">Type
-        <select name="type">${TYPES.map((t) => `<option value="${t}">${TYPE_LABELS[t]}</option>`).join('')}</select>
+        <select name="type">${EVENT_TYPES.map((t) => `<option value="${t.value}">${t.label}</option>`).join('')}</select>
       </label>
     </div>
     <div class="calendar-quick-dates" role="group" aria-label="Quick dates"></div>
     <div class="calendar-priority" role="radiogroup" aria-label="Priority">
       <span class="calendar-priority-label">Priority</span>
-      ${PRIORITIES.map((p) => `<button type="button" class="calendar-priority-option" data-priority="${p}" role="radio" aria-checked="${p === 'P2'}">${p}</button>`).join('')}
+      ${PRIORITIES.map((p) => `<button type="button" class="calendar-priority-option" data-priority="${p}" role="radio" aria-checked="${p === DEFAULT_PRIORITY}">${p}</button>`).join('')}
     </div>
     <p class="calendar-attach-hint">Send posts the announcement <em>and</em> adds an all-day event to the ${ctx.course.toUpperCase()} calendar.</p>
     <p class="calendar-attach-error" role="alert" hidden></p>`;
@@ -58,7 +55,7 @@ export function mountAttachForm(ctx) {
   const dateInput = panel.querySelector('[name="date"]');
   const typeSelect = panel.querySelector('[name="type"]');
   const errorEl = panel.querySelector('.calendar-attach-error');
-  let priority = 'P2';
+  let priority = DEFAULT_PRIORITY;
 
   quickDateChoices(ctx.weeks).forEach(({ label, date }) => {
     const chip = document.createElement('button');

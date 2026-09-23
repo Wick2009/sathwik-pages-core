@@ -2,15 +2,8 @@
 // the same in every demo version: everyone can open the event on the OCS
 // calendar, and teachers can also take it back off the class calendar.
 
+import { TYPE_LABELS } from './event-options.js';
 import { fromIsoDate } from './school-weeks.js';
-
-export const TYPE_LABELS = {
-  event: 'Event',
-  'daily plan': 'Daily plan',
-  'check-in': 'Check-in',
-  grade: 'Graded',
-  assignment: 'Due',
-};
 
 function el(tag, className, text) {
   const node = document.createElement(tag);

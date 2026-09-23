@@ -6,8 +6,10 @@
 import { appendEventMarkers } from '../event-marker.js';
 import { parseQuickSyntax, QUICK_SYNTAX_EXAMPLE } from '../quick-syntax.js';
 import { formatShortDate } from '../school-weeks.js';
-import { TYPE_LABELS } from '../event-card.js';
+import { EVENT_TYPES, TYPE_LABELS } from '../event-options.js';
 import { escapeHtml } from '../html.js';
+
+const TYPE_TAG_HELP = EVENT_TYPES.map((t) => `<code>#${t.tags[0]}</code> ${t.label}`).join(', ');
 
 export function mountQuickSyntax(ctx) {
   if (!ctx.isTeacher()) return { unmount() {} };
@@ -24,11 +26,10 @@ export function mountQuickSyntax(ctx) {
     <details class="quick-syntax-help">
       <summary>Syntax</summary>
       <ul>
-        <li><code>Week of 9/28</code> or <code>Week 7</code> picks the week (default: this school week)</li>
-        <li><code>[Mon]: Title</code> or <code>[Wed - Thu]: Title</code> adds an event on those days</li>
-        <li>Asterisks set the priority. <code>[Fri]: Title</code> is P2 (normal), <code>[Fri]: * Title</code> is P1, and <code>[Fri]: ** Title</code> is P0 (top priority)</li>
-        <li>Like in Slack, <code>*</code> also marks a check-in and <code>**</code> a graded item</li>
-        <li><code>• detail</code> on the next line becomes the description</li>
+        <li><b>When:</b> <code>[Mon]: Title</code>, a range <code>[Wed - Thu]: Title</code>, or a date <code>[10/9]: Title</code>. <code>Week of 9/28</code> or <code>Week 7</code> picks the week for day names (default: this school week)</li>
+        <li><b>Priority:</b> <code>*</code> = P1 and <code>**</code> = P0 before the title, or tag <code>#P0</code>–<code>#P3</code> anywhere. Default P2</li>
+        <li><b>Type:</b> ${TYPE_TAG_HELP}. Default Daily plan; like in Slack, <code>*</code> also means Check-in and <code>**</code> Graded. Tags win over asterisks</li>
+        <li><b>Description:</b> <code>• detail</code> on the next line</li>
         <li><kbd>Shift</kbd>+<kbd>Enter</kbd> for a new line, <kbd>Enter</kbd> sends</li>
       </ul>
     </details>`;
@@ -41,7 +42,8 @@ export function mountQuickSyntax(ctx) {
 
   function render() {
     parsed = parseQuickSyntax(ctx.composer.editor.innerText, { weeks: ctx.weeks, schoolYear: ctx.schoolYear });
-    weekEl.textContent = parsed.entries.length ? `Week starting ${formatShortDate(parsed.weekStart)} (${parsed.weekSource})` : '';
+    weekEl.textContent = parsed.entries.some((e) => e.fromWeekday)
+      ? `Day names = week of ${formatShortDate(parsed.weekStart)} (${parsed.weekSource})` : '';
     chipsEl.innerHTML = '';
     if (!parsed.entries.length) {
       chipsEl.innerHTML = '<span class="quick-syntax-empty">Type <code>[Mon]: Title</code> on its own line to put it on the calendar.</span>';

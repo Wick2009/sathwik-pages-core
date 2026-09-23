@@ -16,12 +16,12 @@ With Slack, a post like `[Thu]: Live Reviews` in the class channel landed on the
 
 ## The two versions
 
-Switch between them with the tabs. Use **View as** to see the teacher view and the student view.
+Switch between them with the tabs. Use **View as** to see the teacher view and the student view. Both versions can set the same things: any date, the type (Event, Daily plan, Due, Check-in, Graded), a priority from P0 to P3, and a description. The only difference is how you enter them.
 
 | | How the teacher adds an event | Best for |
 |---|---|---|
 | **V1: Add-to-calendar button** | Write the announcement, click **Add to calendar**, pick a date, type and priority, then Send | One-off events such as a quiz, a deadline or a guest speaker |
-| **V2: Quick syntax** | Type `[Mon]: Title` lines, the same format as Slack. Asterisks set the priority (`*` = P1, `**` = P0). Detected events appear as chips you can switch off | Posting a whole week's plan at once |
+| **V2: Quick syntax** | Type `[Mon]: Title` or `[10/9]: Title` lines, the same format as Slack. Asterisks set the priority (`*` = P1, `**` = P0), and tags like `#due` or `#P3` set anything else. Detected events appear as chips you can switch off | Posting a whole week's plan at once |
 
 In both versions, an announcement that carries an event shows a card with a **View on OCS calendar** button. Teachers also get **Remove from calendar**.
 
