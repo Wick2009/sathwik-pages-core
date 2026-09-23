@@ -1,6 +1,7 @@
 // Entry point for _includes/announcement_calendar_demo.html.
-// Owns the pieces every version shares (composer, feed, store, transport)
-// and swaps the version-specific UI in and out when the switcher changes.
+// Owns the pieces every version shares (composer, feed, store, transport,
+// week view) and swaps the version-specific composer UI in and out when the
+// switcher changes.
 
 import { fetchOptions, javaURI } from '../../api/config.js';
 import { createRichComposer } from '../rich-text.js';
@@ -13,7 +14,7 @@ import { buildPreviewSeed, DEMO_STUDENT, DEMO_TEACHER } from './preview-seed.js'
 import { parseSchoolCalendar } from './school-weeks.js';
 import { mountAttachForm } from './variants/attach-form.js';
 import { mountQuickSyntax } from './variants/quick-syntax-panel.js';
-import { mountWeekStrip } from './variants/week-strip.js';
+import { mountWeekView } from './week-view.js';
 
 const VERSIONS = {
   1: {
@@ -23,10 +24,6 @@ const VERSIONS = {
   2: {
     mount: mountQuickSyntax,
     summary: 'Type the weekly plan the way it used to go in Slack. Every [Day]: Title line is detected as you type, and each one becomes a calendar event when you send.',
-  },
-  3: {
-    mount: mountWeekStrip,
-    summary: 'The school week stays pinned above the announcements. Click a day to add an event, and the announcement for it posts automatically. Students click a day to jump to its announcement.',
   },
 };
 
@@ -41,10 +38,11 @@ const { schoolYear, weeks } = parseSchoolCalendar(
 
 const $ = (selector) => root.querySelector(selector);
 const slots = {
-  feedTop: $('[data-slot="feed-top"]'),
   composerTools: $('[data-slot="composer-tools"]'),
   composerPanel: $('[data-slot="composer-panel"]'),
 };
+const weekViewSlot = $('[data-slot="week-view"]');
+const weekViewToggle = $('.week-view-toggle');
 const formEl = $('.chat-form');
 const sendBtn = $('.chat-send');
 
@@ -56,6 +54,8 @@ const state = {
   store: null,
   transport: null,
   variant: null,
+  weekViewOn: true,
+  weekView: null,
   sending: false,
 };
 
@@ -120,6 +120,18 @@ function mountVersion() {
   });
 }
 
+// The week view reads from the current store, so it is remounted whenever
+// the data source changes, and independently of the composer version.
+function mountWeekViewIfOn() {
+  state.weekView?.unmount();
+  state.weekView = null;
+  weekViewSlot.hidden = !state.weekViewOn;
+  weekViewToggle.setAttribute('aria-pressed', String(state.weekViewOn));
+  if (state.weekViewOn) {
+    state.weekView = mountWeekView({ slot: weekViewSlot, weeks, getStore: () => state.store, feed });
+  }
+}
+
 async function startMode(mode) {
   state.transport?.stop();
   feed.reset();
@@ -138,6 +150,7 @@ async function startMode(mode) {
   }
   syncControls();
   mountVersion();
+  mountWeekViewIfOn();
   try {
     await state.transport.start(feed.append);
     if (mode === 'live') setStatus('live', 'is-live');
@@ -188,6 +201,11 @@ root.querySelectorAll('[data-mode]').forEach((button) => button.addEventListener
   }
   startMode('live');
 }));
+
+weekViewToggle.addEventListener('click', () => {
+  state.weekViewOn = !state.weekViewOn;
+  mountWeekViewIfOn();
+});
 
 $('.announcement-calendar-reset').addEventListener('click', () => {
   try {

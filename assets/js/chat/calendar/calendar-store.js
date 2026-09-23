@@ -5,8 +5,6 @@
 //
 // Both return events normalized to { id, date, title, description, type, priority, course }.
 
-import { addDays, todayIso } from './school-weeks.js';
-
 const PRIORITY_PREFIX = /^\[(P[0-3])\]\s*/;
 const TITLE_EMOJI = '📅';
 
@@ -86,9 +84,6 @@ export function createLiveCalendarStore({ course, javaURI, fetchOptions, sourceU
     async listRange(start, end) {
       return forThisCourse(await request(`/events/range?start=${start}&end=${end}`));
     },
-    async listNextDay() {
-      return forThisCourse(await request('/events/next-day'));
-    },
     async listBreaks() {
       const breaks = await request('/breaks');
       return (Array.isArray(breaks) ? breaks : []).map((b) => ({ date: normalizeDate(b.date), name: b.name || 'Break' }));
@@ -139,7 +134,6 @@ export function createPreviewCalendarStore({ course, storageKey, seedEvents = []
       return event;
     },
     async listRange(start, end) { return inRange(start, end); },
-    async listNextDay() { const tomorrow = addDays(todayIso(), 1); return inRange(tomorrow, tomorrow); },
     async listBreaks() { return []; },
     async deleteEvent(id) { events = events.filter((e) => e.id !== String(id)); save(); },
     status(id) { return events.some((e) => e.id === String(id)) ? 'active' : 'removed'; },

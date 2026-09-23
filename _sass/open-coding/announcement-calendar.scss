@@ -109,7 +109,7 @@ $announcement-priority-colors: (
     &:empty { display: none; }
   }
 
-  /* ── flash the announcement a V3 "jump" lands on ─────────────── */
+  /* ── flash the announcement a Week view chip jumps to ────────── */
   .chat-msg.is-flash { animation: announcement-calendar-flash 1.6s ease-out; }
 
   /* ── event card under an announcement (all versions) ─────────── */
@@ -293,8 +293,7 @@ $announcement-priority-colors: (
   .calendar-attach-hint { margin: 8px 0 0; color: $text-muted; font-size: 12px; }
 
   .calendar-attach-error,
-  .quick-syntax-error,
-  .week-strip-add-error {
+  .quick-syntax-error {
     margin: 6px 0 0;
     color: $red;
     font-size: 12px;
@@ -358,22 +357,39 @@ $announcement-priority-colors: (
     code, kbd { font-size: 11px; }
   }
 
-  /* ── V3: week strip ───────────────────────────────────────────── */
-  .week-strip {
+  /* ── Week view (toggle in the chat header, works with V1 and V2) ── */
+  .announcement-calendar-header-actions {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .week-view-toggle {
+    @include announcement-pill-button;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    &[aria-pressed="true"] { background: rgba($accent, 0.15); border-color: $accent; color: $text; }
+  }
+
+  [data-slot="week-view"][hidden] { display: none; }
+
+  .week-view {
     margin-bottom: 12px;
-    padding: 10px;
+    padding: 8px 10px 10px;
     border: 1px solid $bg-3;
     border-radius: 8px;
   }
 
-  .week-strip-header {
+  .week-view-header {
     display: flex;
     align-items: center;
     gap: 8px;
     margin-bottom: 8px;
   }
 
-  .week-strip-heading {
+  .week-view-heading {
     display: flex;
     flex: 1;
     flex-direction: column;
@@ -381,139 +397,60 @@ $announcement-priority-colors: (
     line-height: 1.3;
   }
 
-  .week-strip-range { font-size: 13px; font-weight: 600; }
-  .week-strip-note { color: $text-muted; font-size: 11px; }
+  .week-view-range { font-size: 13px; font-weight: 600; }
+  .week-view-note { color: $text-muted; font-size: 11px; }
 
-  .week-strip-nav {
+  .week-view-nav {
     @include announcement-pill-button;
-    padding: 4px 9px;
+    padding: 3px 9px;
   }
 
-  .week-strip-days {
+  .week-view-days {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 6px;
   }
 
-  .week-strip-day {
+  .week-view-day {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    min-height: 84px;
+    min-height: 64px;
     padding: 6px;
     border: 1px solid $bg-3;
     border-radius: 6px;
-    background: transparent;
-    color: $text;
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
 
-    &:hover { border-color: $accent; }
     &.is-today { border-color: $accent; box-shadow: inset 0 0 0 1px $accent; }
-    &.is-selected { background: rgba($accent, 0.12); }
     &.is-closed { background: repeating-linear-gradient(135deg, transparent 0 6px, rgba(255, 255, 255, 0.03) 6px 12px); }
   }
 
-  .week-strip-day-label {
+  .week-view-day-label {
     color: $text-muted;
     font-size: 11px;
     white-space: nowrap;
     b { color: $text; font-size: 14px; }
   }
 
-  .week-strip-closed { color: $warn; font-size: 10px; }
-  .week-strip-more { color: $text-muted; font-size: 10px; }
+  .week-view-closed { color: $warn; font-size: 10px; }
+  .week-view-more { color: $text-muted; font-size: 10px; }
 
-  .week-strip-event {
+  .week-view-event {
     overflow: hidden;
     padding: 2px 5px;
+    border: 0;
     border-left: 3px solid $accent;
     border-radius: 3px;
     background: rgba(255, 255, 255, 0.05);
+    color: $text;
+    font: inherit;
     font-size: 11px;
+    text-align: left;
     white-space: nowrap;
     text-overflow: ellipsis;
+    cursor: pointer;
     @include announcement-priority-accent(border-left-color);
-  }
 
-  .week-strip-day-panel {
-    margin-top: 8px;
-    padding: 10px;
-    border-radius: 6px;
-    background: rgba($accent, 0.06);
-    &[hidden] { display: none; }
-  }
-
-  .week-strip-day-title { margin-bottom: 6px; font-size: 13px; font-weight: 600; }
-  .week-strip-day-empty { margin: 0; color: $text-muted; font-size: 12px; }
-
-  .week-strip-day-events {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .week-strip-day-event {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 8px;
-    border-left: 3px solid $accent;
-    border-radius: 4px;
-    background: rgba(255, 255, 255, 0.04);
-    font-size: 13px;
-    @include announcement-priority-accent(border-left-color);
-  }
-
-  .week-strip-day-event-title { flex: 1; font-weight: 600; }
-  .week-strip-day-event-type { color: $text-muted; font-size: 11px; }
-  .week-strip-jump { @include announcement-pill-button; font-size: 11px; }
-
-  .week-strip-add {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 8px;
-
-    input,
-    select {
-      padding: 6px 8px;
-      border: 1px solid $bg-3;
-      border-radius: 6px;
-      background: rgba(255, 255, 255, 0.04);
-      color: $text;
-      font: inherit;
-      font-size: 13px;
-    }
-
-    input { flex: 1 1 200px; }
-    .week-strip-add-error { flex-basis: 100%; }
-  }
-
-  .week-strip-add-submit {
-    @include announcement-pill-button;
-    border-color: $accent;
-    color: $text;
-  }
-
-  .week-strip-aside {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 6px 16px;
-    margin-top: 8px;
-    color: $text-muted;
-    font-size: 12px;
-    b { color: $text; }
-  }
-
-  .week-strip-upcoming-item {
-    margin-left: 8px;
-    padding-left: 6px;
-    border-left: 3px solid $accent;
-    @include announcement-priority-accent(border-left-color);
-    em { color: $text-muted; font-style: normal; }
+    &:hover { background: rgba($accent, 0.15); }
   }
 
   /* ── phones ───────────────────────────────────────────────────── */
@@ -521,9 +458,10 @@ $announcement-priority-colors: (
     .announcement-calendar-toolbar { flex-direction: column; align-items: stretch; }
     .calendar-attach-grid { grid-template-columns: 1fr 1fr; }
     .calendar-field--wide { grid-column: 1 / -1; }
-    .week-strip-days { grid-template-columns: repeat(5, minmax(56px, 1fr)); overflow-x: auto; }
-    .week-strip-day { min-height: 64px; }
-    .week-strip-event { font-size: 10px; }
+    .week-view-days { grid-template-columns: repeat(5, minmax(56px, 1fr)); overflow-x: auto; }
+    .week-view-day { min-height: 52px; }
+    .week-view-event { font-size: 10px; }
+    .week-view-toggle span { display: none; }
   }
 }
 

@@ -1,8 +1,9 @@
-<!-- Announcement ↔ Calendar demo: three skeleton versions of creating calendar -->
+<!-- Announcement ↔ Calendar demo: two skeleton versions of creating calendar -->
 <!-- events straight from the class announcements, switchable on one page so a -->
-<!-- teacher can compare them. Preview mode (default) runs on sample data in -->
-<!-- localStorage; Live mode uses the existing Spring /api/calendar and group chat -->
-<!-- endpoints on a separate "<course>-announcements-demo" group. -->
+<!-- teacher can compare them, plus a Week view toggle that works with both. -->
+<!-- Preview mode (default) runs on sample data in localStorage; Live mode uses -->
+<!-- the existing Spring /api/calendar and group chat endpoints on a separate -->
+<!-- "<course>-announcements-demo" group. -->
 <!-- Logic lives in assets/js/chat/calendar/ (entry: demo.js). -->
 <!-- Usage: {% raw %}{% include announcement_calendar_demo.html course="csa" %}{% endraw %} -->
 
@@ -12,7 +13,6 @@
     <div class="announcement-calendar-versions" role="tablist" aria-label="Demo version">
       <button type="button" role="tab" data-version="1"><b>V1</b> Add-to-calendar button</button>
       <button type="button" role="tab" data-version="2"><b>V2</b> Quick syntax</button>
-      <button type="button" role="tab" data-version="3"><b>V3</b> Calendar-first</button>
     </div>
     <div class="announcement-calendar-controls">
       <div class="announcement-calendar-segment" role="radiogroup" aria-label="View as">
@@ -38,15 +38,20 @@
           <p class="chat-subtitle">Class-wide announcements, now with calendar events attached.</p>
         </div>
       </div>
-      <span class="chat-status-pill">
-        <span class="chat-status-dot" aria-hidden="true"></span>
-        <span class="chat-status">loading…</span>
-      </span>
+      <div class="announcement-calendar-header-actions">
+        <button type="button" class="week-view-toggle" aria-pressed="true" aria-label="Week view" title="Show or hide this week's calendar">
+          <i class="fas fa-calendar-week" aria-hidden="true"></i><span>Week view</span>
+        </button>
+        <span class="chat-status-pill">
+          <span class="chat-status-dot" aria-hidden="true"></span>
+          <span class="chat-status">loading…</span>
+        </span>
+      </div>
     </div>
 
     <div class="chat-body">
       <p class="chat-preview-note" hidden><i class="fas fa-flask" aria-hidden="true"></i><span></span></p>
-      <div data-slot="feed-top"></div>
+      <div data-slot="week-view"></div>
       <div class="chat-messages" role="log" aria-live="polite">
         <div class="chat-empty">
           <i class="fas fa-bullhorn" aria-hidden="true"></i>
