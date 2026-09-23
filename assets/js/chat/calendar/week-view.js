@@ -35,7 +35,6 @@ export function mountWeekView({ slot, weeks, getStore, getPeriod, feed }) {
     const chip = document.createElement('button');
     chip.type = 'button';
     chip.className = 'week-view-event';
-    chip.dataset.priority = event.priority;
     chip.title = [event.title, formatPeriods(event.periods)].filter(Boolean).join(' · ');
     chip.textContent = event.title;
     chip.addEventListener('click', () => {

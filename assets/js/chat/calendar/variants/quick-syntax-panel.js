@@ -78,7 +78,6 @@ export function mountQuickSyntax(ctx) {
       const chip = document.createElement('button');
       chip.type = 'button';
       chip.className = 'quick-syntax-chip';
-      chip.dataset.priority = entry.priority;
       chip.setAttribute('aria-pressed', String(!skipped.has(entry.key)));
       chip.title = skipped.has(entry.key) ? 'Skipped — click to include' : 'Click to skip this one';
       const meta = [

@@ -25,7 +25,7 @@ Switch between them with the tabs. Both versions can set the same things: any da
 
 In both versions, an announcement that carries an event shows a card with its priority, type, class periods and details, plus a **View on OCS calendar** button. Teachers also get **Remove from calendar**.
 
-**Periods.** Every event says which class periods it's for, in words rather than colors. It defaults from the class: CSSE is period 1, CSA and CSH are period 2, and CSP is periods 3 and 4.
+**Periods.** Every event says which class periods it's for. It defaults from the class: CSSE is period 1, CSA and CSH are period 2, and CSP is periods 3 and 4.
 
 **Week view** is a toggle in the announcements header that works with either version. It pins this school week above the feed, including holidays from the school calendar. Click an event in it to jump to the announcement that created it.
 

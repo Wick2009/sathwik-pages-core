@@ -54,7 +54,6 @@ function removeButton(event, store, onRemoved, status) {
 
 function renderCard(event, { store, isTeacher, calendarUrl }, compact) {
   const card = el('div', `event-card${compact ? ' is-compact' : ''}`);
-  card.dataset.priority = event.priority;
   card.dataset.periods = (event.periods || []).join(' ');
 
   const info = el('div', 'event-card-info');

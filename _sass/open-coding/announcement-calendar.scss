@@ -2,20 +2,7 @@
 // The chat itself reuses the .announcement-chat styles from the courses
 // project; this file only adds the calendar pieces on top, with the same
 // tokens ($bg-3 borders, $accent highlights, $text-muted secondary text).
-// Priority colors match the P0–P3 chips on sprint cards and /student/calendar.
-
-$announcement-priority-colors: (
-  "P0": #dc2626,
-  "P1": #ea580c,
-  "P2": #ca8a04,
-  "P3": #16a34a,
-);
-
-@mixin announcement-priority-accent($property) {
-  @each $priority, $color in $announcement-priority-colors {
-    &[data-priority="#{$priority}"] { #{$property}: $color; }
-  }
-}
+// Nothing is color-coded: priority and class periods are shown as words.
 
 @mixin announcement-pill-button {
   padding: 5px 10px;
@@ -102,24 +89,6 @@ $announcement-priority-colors: (
     line-height: 1.5;
   }
 
-  // Explains the priority colors used on cards and Week view chips.
-  .announcement-calendar-legend {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px 12px;
-    margin: -4px 0 12px;
-    color: $text-muted;
-    font-size: 12px;
-  }
-
-  .announcement-calendar-legend-item {
-    padding-left: 6px;
-    border-left: 4px solid $accent;
-    color: $text;
-    @include announcement-priority-accent(border-left-color);
-  }
-
   .announcement-calendar-tools {
     display: flex;
     gap: 8px;
@@ -147,7 +116,6 @@ $announcement-priority-colors: (
     border-left: 4px solid $accent;
     border-radius: 8px;
     background: rgba($accent, 0.05);
-    @include announcement-priority-accent(border-left-color);
 
     // Several events in one announcement: one line each (date, title, tags, actions).
     &.is-compact {
@@ -209,7 +177,6 @@ $announcement-priority-colors: (
     font-size: 11px;
   }
 
-  // Class periods are plain text on purpose: color is already used for priority.
   .event-card-chip--period {
     border-color: rgba($text, 0.35);
     color: $text;
@@ -333,8 +300,7 @@ $announcement-priority-colors: (
 
   .calendar-priority-option {
     @include announcement-pill-button;
-    @include announcement-priority-accent(color);
-    &[aria-checked="true"] { border-color: currentColor; background: rgba(255, 255, 255, 0.06); font-weight: 700; }
+    &[aria-checked="true"] { background: rgba($accent, 0.15); border-color: $accent; color: $text; font-weight: 700; }
   }
 
   .calendar-attach-hint { margin: 8px 0 0; color: $text-muted; font-size: 12px; }
@@ -382,7 +348,6 @@ $announcement-priority-colors: (
     text-align: left;
     cursor: pointer;
 
-    @include announcement-priority-accent(border-color);
     &[aria-pressed="false"] {
       opacity: 0.45;
       border-style: dashed;
@@ -494,7 +459,6 @@ $announcement-priority-colors: (
     white-space: nowrap;
     text-overflow: ellipsis;
     cursor: pointer;
-    @include announcement-priority-accent(border-left-color);
 
     &:hover { background: rgba($accent, 0.15); }
   }
