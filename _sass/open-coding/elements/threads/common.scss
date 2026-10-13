@@ -1,0 +1,307 @@
+// Public grammar (assets/js/chat/threads/thread-ui.js builds it):
+// - .ocs__thread-chat      the chat; its width decides the thread panel layout
+// - .ocs__thread-layout    main chat + .ocs__thread-panel; .is-thread-open shows the panel
+// - .ocs__thread-msg       a message row; .is-flash and .is-thread-open highlight it
+// - .ocs__msg-toolbar      Reply / Thread / Edit / Delete, shown on hover or focus
+// - .ocs__reply-ref        the quote line above a reply (--thread: "replied to a thread")
+// - .ocs__thread-summary   "3 replies · Last reply 5 min ago" under a message
+// - .ocs__reply-bar        "Replying to …" over a composer; compose with .ocs__callout
+//
+// Buttons, toggles and labels are the existing ocs__btn, ocs__toggle and
+// ocs__team-label. Several selectors carry a second class only to outrank the
+// announcement chat's own .chat-* rules, which this element sits inside.
+
+// ── Layout ──────────────────────────────────────────────────────────────
+
+.ocs__thread-chat {
+  container: ocs-thread / inline-size;
+}
+
+.ocs__thread-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: $thread-gap;
+
+  // The announcement chat paints its logs with a Sass color baked in at build
+  // time, which turns them gray under light themes. Use the theme instead.
+  .ocs__thread-chat & .chat-messages {
+    border-color: var(--ui-border);
+    background: thread-mix(var(--pref-text-color), 3%, var(--pref-bg-color));
+  }
+
+  // Narrow chats (phones): the open thread takes the main chat's place.
+  &.is-thread-open > .ocs__thread-main { display: none; }
+
+  // Two narrow columns: the Send button moves under the message box.
+  &.is-thread-open .chat-form.chat-form--rich {
+    flex-wrap: wrap;
+
+    .rt-composer { flex-basis: 100%; }
+
+    .chat-send {
+      align-self: flex-end;
+      margin-left: auto;
+    }
+  }
+}
+
+.ocs__thread-main,
+.ocs__thread-panel {
+  min-width: 0;
+}
+
+.ocs__thread-panel {
+  display: flex;
+  flex-direction: column;
+
+  &[hidden] { display: none; }
+
+  // The thread's box drops the font pickers so its toolbar fits on one line.
+  .rt-select { display: none; }
+}
+
+// Wide chats: the thread sits beside the main chat, Slack-style.
+@container ocs-thread (min-width: #{$thread-side-by-side-min}) {
+  .ocs__thread-layout.is-thread-open {
+    grid-template-columns: minmax(0, map-get($thread-columns, main)) minmax(0, map-get($thread-columns, panel));
+
+    > .ocs__thread-main { display: block; }
+
+    > .ocs__thread-panel {
+      padding-left: $thread-gap;
+      border-left: 1px solid var(--ui-border);
+    }
+  }
+
+  // Two classes: the site emits .ocs__btn's display more than once.
+  .ocs__thread-panel-header .ocs__thread-back { display: none; }
+}
+
+.ocs__thread-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+
+  > div {
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+}
+
+// Second class: the site's h3 rule adds a rule-line.
+.ocs__thread-panel .ocs__thread-panel-title {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--pref-text-color);
+  font-size: thread-font-size(title);
+}
+
+// ── Message rows ────────────────────────────────────────────────────────
+
+.ocs__thread-chat .ocs__thread-msg {
+  position: relative;
+  margin: 0 (-(map-get($thread-row-padding, x)));
+  padding: map-get($thread-row-padding, y) map-get($thread-row-padding, x);
+  border-radius: $thread-radius;
+  transition: background-color $thread-fade;
+
+  &:hover,
+  &:focus-within {
+    background: thread-tint(hover, var(--pref-text-color));
+  }
+
+  // The background above already shows which row is focused.
+  &:focus { outline: none; }
+
+  @each $state in (thread-open, flash) {
+    &.is-#{$state} { background: thread-tint($state); }
+  }
+
+  &.is-thread-open { box-shadow: inset 3px 0 0 var(--pref-accent-color); }
+
+  // Line the avatar up with the name, below however many quote lines there are.
+  @for $refs from 1 through $thread-max-refs {
+    &[data-refs="#{$refs}"] > .chat-avatar { margin-top: $refs * $thread-ref-row; }
+  }
+}
+
+// Hidden until the row is hovered or something in it has focus. It stays in
+// the tab order (opacity, not display), so keyboard users can reach it, and
+// on touch screens a tap focuses the row (tabindex="-1") to show it.
+.ocs__msg-toolbar {
+  position: absolute;
+  top: 0.2rem;
+  right: 0.4rem;
+  z-index: 2;
+  display: flex;
+  gap: 0.125rem;
+  padding: 0.15rem;
+  border: 1px solid var(--ui-border);
+  border-radius: $thread-radius;
+  background: var(--panel);
+  color: var(--text-muted);
+  box-shadow: 0 2px 8px thread-mix(var(--pref-text-color), 18%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity $thread-toolbar-fade;
+
+  .ocs__thread-msg:hover > &,
+  .ocs__thread-msg:focus-within > & {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  button {
+    @extend %thread-text-button;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: map-get($thread-toolbar-button, width);
+    height: map-get($thread-toolbar-button, height);
+    border-radius: map-get($thread-toolbar-button, radius);
+    font-size: thread-font-size(small);
+
+    &:hover,
+    &:focus-visible {
+      background: thread-tint(button);
+      color: var(--pref-accent-color);
+    }
+
+    @include thread-focus-ring(1px);
+  }
+}
+
+// ── Reply quote line (Discord) ──────────────────────────────────────────
+
+.ocs__reply-ref {
+  @extend %thread-text-button;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  max-width: 100%;
+  margin: 0 0 0.15rem;
+  color: var(--text-muted);
+  font-size: thread-font-size(ref);
+  line-height: $thread-ref-line-height;
+
+  @include thread-focus-ring;
+
+  strong {
+    color: var(--pref-text-color);
+    font-weight: 600;
+  }
+
+  &:hover strong,
+  &:focus-visible strong { text-decoration: underline; }
+
+  // Everything but the snippet keeps its size; the snippet truncates.
+  > :not(.ocs__reply-ref-text) {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  // The curved line from the avatar up to the quote. --ui-border is too
+  // faint for it in dark themes, so it's a mix of the muted text color.
+  &:not(.ocs__reply-ref--thread)::before {
+    $connector: $thread-connector-width solid thread-mix(var(--text-muted), 55%, transparent);
+    $top: $thread-ref-line-height * 0.5;
+    content: "";
+    position: absolute;
+    top: $top;
+    left: -$thread-avatar-center;
+    width: $thread-avatar-center - 0.35rem;
+    height: $thread-ref-row - $top;
+    border-top: $connector;
+    border-left: $connector;
+    border-top-left-radius: 0.4rem;
+  }
+
+  &.is-missing {
+    cursor: default;
+    font-style: italic;
+  }
+}
+
+.ocs__reply-ref-text { @include thread-truncate; }
+
+// Small avatars: sized from $thread-mini-avatars, outranking .announcement-chat .chat-avatar.
+@each $name, $spec in $thread-mini-avatars {
+  .ocs__thread-chat #{map-get($spec, host)} .chat-avatar {
+    @include thread-mini-avatar($spec);
+  }
+}
+
+// ── Thread summary (Slack) ──────────────────────────────────────────────
+
+.ocs__thread-summary {
+  @extend %thread-text-button;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 100%;
+  margin-top: 0.3rem;
+  padding: 0.2rem 0.6rem 0.2rem 0.25rem;
+  border: 1px solid transparent;
+  border-radius: $thread-radius;
+  color: var(--text-muted);
+  font-size: thread-font-size(summary);
+
+  &:hover,
+  &:focus-visible,
+  &[aria-expanded="true"] {
+    border-color: var(--ui-border);
+    background: var(--panel);
+  }
+
+  @include thread-focus-ring(1px);
+}
+
+.ocs__thread-summary-avatars {
+  display: inline-flex;
+  padding-left: map-get(map-get($thread-mini-avatars, summary), overlap);
+}
+
+.ocs__thread-summary-count {
+  color: var(--pref-accent-color);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ocs__thread-summary-last { @include thread-truncate; }
+
+// ── Composer ────────────────────────────────────────────────────────────
+
+// Second class: outranks .ocs__callout's own margin and padding.
+.ocs__callout.ocs__reply-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0;
+  padding: 0.35rem 0.35rem 0.35rem 0.75rem;
+  font-size: thread-font-size(small);
+
+  strong { color: var(--pref-text-color); }
+
+  .ocs__btn {
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+}
+
+.ocs__reply-bar-text { @include thread-truncate; }
+
+.ocs__thread-also {
+  margin-top: 0.6rem;
+  font-size: thread-font-size(small);
+}
+
+.ocs__thread-chat .chat-empty .ocs__btn {
+  margin-top: 0.5rem;
+}

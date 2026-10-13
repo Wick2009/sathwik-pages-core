@@ -1,0 +1,108 @@
+// Design tokens for the threads element: sizes, timings and tint amounts are
+// Sass, fixed when the site builds. Colors are NOT Sass colors: the functions
+// below write CSS color-mix() over the theme variables (--pref-*-color,
+// --panel, --text-muted), so a saved preference theme still recolors
+// everything (UGRC-CSA/Pages#93 is what happens with baked Sass colors).
+
+// ── Layout ──────────────────────────────────────────────────────────────
+
+// Chat width at which an open thread sits beside the main chat instead of
+// replacing it. 680px fits the site's reading column (about 740px on a laptop).
+$thread-side-by-side-min: 680px;
+$thread-columns: (main: 6fr, panel: 5fr);
+$thread-gap: 1rem;
+
+// ── Message rows ────────────────────────────────────────────────────────
+
+$thread-row-padding: (y: 0.35rem, x: 0.5rem);
+$thread-radius: 0.5rem;
+$thread-fade: 0.3s;
+
+// One quote line above a message, and how many a message can have
+// ("replied to a thread" + the reply quote).
+$thread-ref-line-height: 1.2rem;
+$thread-ref-row: 1.35rem;
+$thread-max-refs: 2;
+
+// The announcement chat's avatar (28px) plus its gap (10px) puts the avatar's
+// center 1.5rem left of the message text; the quote connector starts there.
+$thread-avatar-center: 1.5rem;
+$thread-connector-width: 2px;
+
+// Small avatars, by where they appear. overlap stacks them like Slack's.
+$thread-mini-avatars: (
+  reply-ref: (host: ".ocs__reply-ref", size: 1rem, font-size: 0.45rem, overlap: null),
+  summary: (host: ".ocs__thread-summary-avatars", size: 1.25rem, font-size: 0.5rem, overlap: 0.3rem),
+);
+
+$thread-font-sizes: (ref: 0.75rem, summary: 0.78rem, small: 0.8rem, title: 1rem);
+
+// How much color goes into each state's background, over --panel.
+$thread-tints: (
+  hover: 5%,        // of the text color
+  thread-open: 10%, // of the accent: the message whose thread is open
+  flash: 22%,       // of the accent: the message a quote jumped to
+  button: 16%,      // of the accent: a toolbar button under the pointer
+);
+
+// ── Toolbar ─────────────────────────────────────────────────────────────
+
+$thread-toolbar-button: (width: 1.9rem, height: 1.7rem, radius: 0.35rem);
+$thread-toolbar-fade: 0.12s;
+
+// ── Functions ───────────────────────────────────────────────────────────
+
+@function thread-font-size($name) {
+  @return map-get($thread-font-sizes, $name);
+}
+
+// A theme color mixed into a surface. Returns CSS for the browser to resolve.
+@function thread-mix($color, $amount, $base: var(--panel)) {
+  @return unquote("color-mix(in srgb, #{$color} #{$amount}, #{$base})");
+}
+
+// A state's tint from $thread-tints, using the accent (or another theme color).
+@function thread-tint($state, $color: var(--pref-accent-color)) {
+  @return thread-mix($color, map-get($thread-tints, $state));
+}
+
+// ── Mixins ──────────────────────────────────────────────────────────────
+
+@mixin thread-focus-ring($offset: 2px) {
+  &:focus-visible {
+    outline: 2px solid var(--pref-accent-color);
+    outline-offset: $offset;
+  }
+}
+
+// One line of text that ends in "…" when it doesn't fit.
+@mixin thread-truncate {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin thread-mini-avatar($spec) {
+  width: map-get($spec, size);
+  height: map-get($spec, size);
+  font-size: map-get($spec, font-size);
+
+  @if map-get($spec, overlap) {
+    margin-left: -(map-get($spec, overlap));
+    border: 2px solid var(--panel);
+  }
+}
+
+// ── Placeholders ────────────────────────────────────────────────────────
+
+// A <button> with the browser's look removed, for buttons that read as text.
+%thread-text-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}

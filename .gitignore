@@ -108,6 +108,7 @@ images/projects/
 /assets/js/lessonbase.js
 /assets/js/lessonbasecapture.js
 /assets/js/chat/calendar/
+/assets/js/chat/threads/
 /_sass/open-coding/lesson-player.scss
 /_sass/open-coding/blogs.scss
 /_sass/open-coding/timeline.scss

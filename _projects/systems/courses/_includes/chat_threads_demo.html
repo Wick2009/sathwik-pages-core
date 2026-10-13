@@ -1,0 +1,50 @@
+<!-- Replies + threads demo: a class chat where any message can get a -->
+<!-- Discord-style reply or a Slack-style thread, for feedback before the -->
+<!-- feature goes into the real course chats. Preview (default) runs a sample -->
+<!-- conversation in localStorage; Live uses a separate "<course>-threads-demo" -->
+<!-- group on the Spring group chat endpoints. -->
+<!-- Logic lives in assets/js/chat/threads/ (entry: demo.js). -->
+<!-- Usage: {% raw %}{% include chat_threads_demo.html course="csa" %}{% endraw %} -->
+
+{% assign demo_course = include.course | default: page.course | default: "csa" %}
+<section id="chatThreadsDemo" data-course="{{ demo_course }}" data-baseurl="{{ site.baseurl }}">
+  <div class="ocs__links ocs__links--wide">
+    <div class="ocs__links" role="radiogroup" aria-label="Data source">
+      <span class="ocs__team-label">Data</span>
+      <button type="button" class="ocs__btn small pill" role="radio" data-mode="preview" title="Sample conversation in this browser">Preview</button>
+      <button type="button" class="ocs__btn small pill" role="radio" data-mode="live" title="Real backend, needs a sign-in">Live</button>
+    </div>
+    <div data-preview-only>
+      <div class="ocs__links" role="radiogroup" aria-label="Post as">
+        <span class="ocs__team-label">Post as</span>
+        <button type="button" class="ocs__btn small pill" role="radio" data-as="teacher">Teacher</button>
+        <button type="button" class="ocs__btn small pill" role="radio" data-as="student">Student</button>
+      </div>
+    </div>
+    <div data-preview-only>
+      <button type="button" class="ocs__btn small pill" data-hook="reset" title="Restore the sample conversation"><i class="fas fa-undo" aria-hidden="true"></i> Reset</button>
+    </div>
+  </div>
+
+  <div class="announcement-chat ocs__thread-chat">
+    <div class="chat-header">
+      <div class="chat-heading">
+        <span class="chat-badge" aria-hidden="true"><i class="fas fa-bullhorn"></i></span>
+        <div class="chat-heading-text">
+          <h2 class="chat-title">{{ demo_course | upcase }} Announcements</h2>
+          <p class="chat-subtitle">Hover or tap a message to reply to it or start a thread.</p>
+        </div>
+      </div>
+      <span class="chat-status-pill">
+        <span class="chat-status-dot" aria-hidden="true"></span>
+        <span class="chat-status">loading…</span>
+      </span>
+    </div>
+    <div class="chat-body">
+      <p class="chat-preview-note" hidden><i class="fas fa-flask" aria-hidden="true"></i><span></span></p>
+      <div data-slot="chat"></div>
+    </div>
+  </div>
+</section>
+
+<script type="module" src="{{ site.baseurl }}/assets/js/chat/threads/demo.js"></script>

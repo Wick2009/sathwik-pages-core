@@ -13,6 +13,7 @@
     { "source": "js/player/course-entry.js", "destination": "assets/js/course-entry.js" },
     { "source": "js/player/course-navigation-state.js", "destination": "assets/js/course-navigation-state.js" },
     { "source": "js/announcement-calendar", "destination": "assets/js/chat/calendar" },
+    { "source": "js/chat-threads", "destination": "assets/js/chat/threads" },
     { "source": "js/courses.js", "destination": "assets/js/projects/courses/courses.js" },
     { "source": "sass/main.scss", "destination": "_sass/projects/courses/main.scss" },
     { "source": "sass/viewing/timeline.scss", "destination": "_sass/open-coding/timeline.scss" },
