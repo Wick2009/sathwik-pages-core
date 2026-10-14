@@ -68,7 +68,7 @@
 <h2 class="ocs__section-title">Security</h2>
 <p class="ocs__lead">Every kit ships safe: only verified people get in, and student code never touches the platform.</p>
 <div class="ocs__split">
-<div class="ocs__visual"><div class="ocs__team"><span class="ocs__team-label">Owned by</span><span class="ocs__team-name">Jacob C, Lucas M, Zhengji L</span></div></div>
+<div class="ocs__visual"><div class="ocs__team"><span class="ocs__team-label">Owned by</span><span class="ocs__team-name">Zhengji L, Harrish A, Jacob C, Lucas M</span></div></div>
 <div class="ocs__visual"><div class="ocs__team"><span class="ocs__team-label">Built with</span><span class="ocs__team-name"><span class="ocs__status-pill">Spring Boot</span> <span class="ocs__status-pill">Flask</span> <span class="ocs__status-pill">Docker</span> <span class="ocs__status-pill">JWT</span> <span class="ocs__status-pill">Google OAuth2</span></span></div></div>
 </div>
 <h3 class="ocs__section-title">Shipped <span class="ocs__status-pill ocs__status-pill--good">5</span></h3>
@@ -79,6 +79,10 @@
 <div class="ocs__keypoint"><span class="ocs__check">&#10003;</span><span><strong>Safe password sync.</strong> Plaintext sync to Flask is refused over insecure links.</span></div>
 <div class="ocs__keypoint"><span class="ocs__check">&#10003;</span><span><strong>Isolated Flask runner.</strong> Python runs in its own Docker container, never in the main app.</span></div>
 </div>
+<h3 class="ocs__section-title">In progress <span class="ocs__status-pill ocs__status-pill--warn">1</span></h3>
+<ul class="ocs__checklist">
+<li class="open"><span class="ocs__checklist-box"></span><span><strong>Login cookies.</strong> Harrish is working on the cookies that keep a user signed in, so a session stays secure from login to logout.</span></li>
+</ul>
 <h3 class="ocs__section-title">Next <span class="ocs__status-pill ocs__status-pill--warn">7</span></h3>
 <ul class="ocs__checklist">
 <li><span class="ocs__checklist-box"></span><span><strong>Simpler password policy.</strong> Spring's password-complexity check is causing support issues, so it comes out first.</span></li>
@@ -131,7 +135,7 @@
 </ul>
 <h3 class="ocs__section-title">In progress <span class="ocs__status-pill ocs__status-pill--warn">1</span></h3>
 <ul class="ocs__checklist">
-<li class="open"><span class="ocs__checklist-box"></span><span><strong>Mentor dashboard.</strong> We are building a dashboard where each mentor tracks only their own groups' progress and notes, building on the mentor role and verification already shipped. Darshan leads it, and Zhengji brings in what other teams need from it.</span></li>
+<li class="open"><span class="ocs__checklist-box"></span><span><strong>Mentor dashboard.</strong> We are building a dashboard where each mentor tracks only their own groups' progress and notes, building on the mentor role and verification already shipped. Darshan leads it, with Harrish building alongside.</span></li>
 </ul>
 <h3 class="ocs__section-title">Next <span class="ocs__status-pill ocs__status-pill--warn">5</span></h3>
 <ul class="ocs__checklist">
@@ -185,13 +189,14 @@
 <div class="ocs__grid-cell"><strong>Reviewed and reported</strong><br>Review before done, and a weekly update every Thursday.</div>
 </div>
 <h3 class="ocs__section-title" id="team-flow">Our team flow</h3>
-<p>This mindmap shows how we split the work. Everyone branches off the CSA Admin hub, and the colored dots show which workstreams each person is on: <strong>OCS in a Kit</strong> (pink), <strong>Mentor Dashboard</strong> (orange), and <strong>Database</strong> (green). Zhengji appears under the nickname Jim.</p>
-<img class="ocs__image-frame" src="{{ '/images/capstone/csa-admin-mindmap.jpg' | relative_url }}" alt="Mindmap of the CSA Admin team. Lucas works on the database and has moved from JS to SQL. Jacob is presenting SQL and working on the calendar. Rudra works in the database and handles OCS communications. Arnav works on all projects and leads Harrish (updating mentor content), Dhyan (working with Lucas on the database), and Shayan (login lockout after too many invalid attempts). Darshan builds the mentor dashboard with Zhengji (labeled Jim), who works with other teams. A dashed line links Shayan's lockout work to Darshan." loading="lazy">
+<p>This mindmap shows how we split the work. Everyone branches off the CSA Admin hub, and the colored dots show which workstreams each person is on: <strong>OCS in a Kit</strong> (pink), <strong>Mentor Dashboard</strong> (orange), <strong>Database</strong> (green), and <strong>Security</strong> (blue).</p>
+<img class="ocs__image-frame" src="{{ '/images/capstone/csa-admin-mindmap.jpg' | relative_url }}" alt="Mindmap of the CSA Admin team. Lucas works on the database and has moved from JS to SQL. Jacob works on SQL. Rudra works in the database and handles OCS communications. Arnav works on OCS in a Kit and leads Harrish (mentor dashboard and login cookies), Dhyan (working with Lucas on the database), and Shayan (login lockout after too many invalid attempts). Darshan builds the mentor dashboard. Zhengji works with security. A dashed line links Shayan's lockout work to Darshan." loading="lazy">
 <h3 class="ocs__section-title">How the work flows</h3>
 <div class="ocs__grid ocs__grid--standard cols-2">
-<div class="ocs__grid-cell"><strong>Arnav coordinates every project</strong><br>Arnav is the only member on all three workstreams, and Harrish, Dhyan, and Shayan report through Arnav. That keeps kit, mentor, and database work from drifting apart.</div>
-<div class="ocs__grid-cell"><strong>Darshan owns the mentor dashboard</strong><br>Zhengji works alongside Darshan and carries requests to and from other teams, so the dashboard fits how the rest of OCS uses mentors.</div>
-<div class="ocs__grid-cell"><strong>The database track runs in parallel</strong><br>Lucas and Jacob (the green boxes) work on SQL, and Jacob also builds the calendar. Dhyan pairs with Lucas, and Rudra works in the database while handling OCS communications for the team.</div>
+<div class="ocs__grid-cell"><strong>Arnav drives OCS in a Kit</strong><br>Arnav works only on the kit, and Harrish, Dhyan, and Shayan report through Arnav. That keeps every branch building toward something another school can set up.</div>
+<div class="ocs__grid-cell"><strong>Darshan and Harrish build the mentor dashboard</strong><br>Darshan leads the dashboard and Harrish builds alongside, so mentors can track their own groups. Harrish also works on login cookies, tying the dashboard to secure sign-in.</div>
+<div class="ocs__grid-cell"><strong>Zhengji anchors security</strong><br>Zhengji works with security, alongside Harrish's login cookies and Shayan's login lockout, so sign-in stays protected as the kit grows.</div>
+<div class="ocs__grid-cell"><strong>The database track runs in parallel</strong><br>Lucas and Jacob (the green boxes) work on SQL. Dhyan pairs with Lucas, and Rudra works in the database while handling OCS communications for the team.</div>
 <div class="ocs__grid-cell"><strong>Every task feeds the kit</strong><br>Nearly every member carries the pink dot: whatever they build keeps its school-specific values in the kit. Dashed lines mark work that crosses branches, such as Shayan's login lockout, which ties into the accounts Darshan's dashboard shows.</div>
 </div>
 </div>
