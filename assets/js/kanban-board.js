@@ -12,17 +12,19 @@
 // its fields and one per 100 cards; a repeat visit, only the cards. When GitHub
 // doesn't answer, the last copy stays up with a note saying so.
 //
-// Every board names its columns its own way ("Todo", "📋 To Do", "Ready"), so
-// familiar names are grouped into five shared stages, the same five as the OCS
-// issue lifecycle (Parking Lot, ToDo, In Progress, In Review, Done); any other
-// column keeps its own name, and cards with no status get a "No status"
-// column. Only UGRC-CSA's note columns ("Team Map", "Reflections") are left
-// out. Each card shows the evidence for its column's gate: its checklist
-// progress and the pull requests linked to it.
+// Nothing about columns or wording is written here. The stages, the field
+// names and everything the board says come from _data/kanban.yml, which the
+// include puts on the page, and a capstone can rename, merge, collapse or hide
+// its own board's columns with a columns list (see boardConfig). Every board
+// names its columns its own way ("Todo", "📋 To Do", "Ready"), so a status with
+// a stage's words joins that stage's column; any other status keeps a column of
+// its own name, and cards with no status get a column too. Each card shows the
+// evidence for its column's gate: its checklist progress and the pull requests
+// linked to it.
 //
-// The filters, counts and backlog toggle are existing OCS elements
-// (ocs__links, ocs__btn, ocs__status-pill, ocs__toggle); the columns and cards
-// are the ocs__kanban element (_sass/open-coding/elements/kanban/).
+// The filters, counts and toggle are existing OCS elements (ocs__links,
+// ocs__btn, ocs__status-pill, ocs__toggle); the columns and cards are the
+// ocs__kanban element (_sass/open-coding/elements/kanban/).
 
 const API = 'https://api.github.com';
 const FRESH_MS = 10 * 60 * 1000;       // a saved board is reused this long
@@ -31,33 +33,69 @@ const MAX_PAGES = 5;                   // 100 cards a page
 // Accept is the only header, so the browser sends no CORS preflight first.
 const HEADERS = { Accept: 'application/vnd.github+json' };
 
+/* ── Settings ────────────────────────────────────────────────────────── */
+
+const listOf = (value) => (Array.isArray(value) ? value : []);
+
+// A name's words, for matching: "📋 To-Do" → ["to", "do"].
+const wordsOf = (name) => String(name ?? '').toLowerCase().match(/[\p{L}\p{M}\p{N}]+/gu) || [];
+
+// A status is looked up by its words, so case, emoji and punctuation don't
+// matter ("Team Map" finds "📌 Team Map").
+const nameKey = (name) => wordsOf(name).join(' ') || String(name ?? '').trim().toLowerCase();
+
+// The settings a board is drawn with: the site's defaults (_data/kanban.yml)
+// and the capstone's own columns list, whose entries each name one of its
+// board's statuses:
+//   { status: 'Todo', label: 'ToDo' }          its own column, by this name
+//   { status: 'Ground 0', stage: 'backlog' }   into that stage's column
+//   { status: 'Done', collapsed: true }        its column starts collapsed (false: open)
+//   { status: 'Notes', hidden: true }          left off the board
+export function boardConfig(defaults, columns) {
+  const data = defaults || {};
+  const overrides = new Map();
+  listOf(columns).forEach((column) => {
+    if (column && String(column.status ?? '').trim()) overrides.set(nameKey(column.status), column);
+  });
+  return {
+    stages: listOf(data.stages).filter((stage) => stage?.key).map((stage) => ({
+      key: String(stage.key),
+      label: String(stage.label ?? stage.key),
+      words: listOf(stage.words).map(wordsOf).filter((phrase) => phrase.length),
+      collapsed: Boolean(stage.collapsed),
+      boardName: Boolean(stage.board_name),
+      done: Boolean(stage.done),
+    })),
+    shared: listOf(data.shared).map(nameKey),
+    fields: data.fields || {},
+    cardFields: listOf(data.card_fields),
+    perColumn: Number(data.per_column) > 0 ? Number(data.per_column) : Infinity,
+    text: data.text || {},
+    overrides,
+  };
+}
+
+// One of the settings' sentences, with {n}, {name} and the like filled in.
+function textOf(config, key, values = {}) {
+  return String(config.text[key] ?? '').replace(/\{(\w+)\}/g, (match, name) => (name in values ? String(values[name]) : match));
+}
+
 /* ── Stages ──────────────────────────────────────────────────────────── */
 
-export const STAGES = [
-  { key: 'backlog', label: 'Backlog' },
-  { key: 'todo', label: 'To do' },
-  { key: 'doing', label: 'In progress' },
-  { key: 'review', label: 'In review' },
-  { key: 'done', label: 'Done' },
-];
+// Whether a status's words hold one of a stage's phrases: each word of the
+// phrase starts a word of the status, in a row, so "block" matches "Blocked"
+// and "to do" matches "📋 To-Do".
+const hasPhrase = (words, phrase) => words.some((_, i) => phrase.every((part, j) => words[i + j]?.startsWith(part)));
 
-// Tried in this order, so "In review" never lands in "In progress". Blocked
-// or waiting work is still in progress, not a column to leave out.
-const STAGE_RULES = [
-  ['review', /review|\bqa\b|testing/i],
-  ['done', /done|shipped|complete|closed|merged|released|deployed|finished|resolved/i],
-  ['doing', /progress|doing|active|\bwip\b|building|block|hold|wait|stuck/i],
-  ['todo', /to ?do|ready|next|planned|sprint/i],
-  ['backlog', /backlog|parking|idea|planning|icebox|someday|triage|\bnew\b/i],
-];
-
-// The stage a status belongs to, or null when its name isn't a familiar one
-// (that column then keeps its own name).
-export function stageOf(status) {
-  if (!status) return 'backlog';   // GitHub's "No Status" column
-  const rule = STAGE_RULES.find(([, pattern]) => pattern.test(status));
-  return rule ? rule[0] : null;
+// The stage a status belongs to, or null when it has none of the stages'
+// words (that column then keeps its own name). A status with words from two
+// stages ("Waiting for review") belongs to the later one.
+function stageFor(status, config) {
+  const words = wordsOf(status);
+  return [...config.stages].reverse().find((stage) => stage.words.some((phrase) => hasPhrase(words, phrase))) || null;
 }
+
+export const stageOf = (status, config) => stageFor(status, config)?.key ?? null;
 
 /* ── Board address and fields ────────────────────────────────────────── */
 
@@ -85,41 +123,32 @@ export function parseBoardUrl(address) {
 const optionName = (option) => (typeof option?.name === 'string' ? option.name : option?.name?.raw) || '';
 
 function findField(fields, type, name) {
+  if (!name) return null;
   const wanted = String(name).toLowerCase();
   const found = fields.find((f) => f.data_type === type && f.name.toLowerCase() === wanted);
   return found ? { id: found.id, name: found.name, options: (found.options || []).map(optionName) } : null;
 }
 
-// The fields the embed reads, found by name in any case: the status (or the
-// board's first single-select), the field to filter by, a People multi-select,
-// Priority and Topic single-selects and a Shipped date. Linked pull requests is
-// GitHub's own field, found by its type. Assignees come with each issue, not as
-// a field.
-export function pickFields(fields, filterName) {
+// The fields the embed reads, found by the settings' names in any case: the
+// status (or the board's first single-select), the field to filter by, a
+// people multi-select, a shipped date and the single-selects a card shows
+// (card_fields). Linked pull requests is GitHub's own field, found by its
+// type. Assignees come with each issue, not as a field.
+export function pickFields(fields, filterName, config) {
+  const names = config.fields;
   const firstSingle = fields.find((f) => f.data_type === 'single_select');
   const prs = fields.find((f) => f.data_type === 'linked_pull_requests');
   return {
-    status: findField(fields, 'single_select', 'Status') || (firstSingle ? findField(fields, 'single_select', firstSingle.name) : null),
+    status: findField(fields, 'single_select', names.status) || (firstSingle ? findField(fields, 'single_select', firstSingle.name) : null),
     group: filterName ? findField(fields, 'single_select', filterName) : null,
-    people: findField(fields, 'multi_select', 'People'),
-    shipped: findField(fields, 'date', 'Shipped'),
-    priority: findField(fields, 'single_select', 'Priority'),
-    topic: findField(fields, 'single_select', 'Topic'),
+    people: findField(fields, 'multi_select', names.people),
+    shipped: findField(fields, 'date', names.shipped),
     prs: prs ? { id: prs.id, name: prs.name, options: [] } : null,
+    details: config.cardFields.map((name) => findField(fields, 'single_select', name)).filter(Boolean),
   };
 }
 
 /* ── Normalizing ─────────────────────────────────────────────────────── */
-
-// An option such as "Everyone" is for cards the whole team shares: it isn't
-// a filter of its own, and its cards show under every group.
-const SHARED = /^(everyone|all|whole team|shared)$/i;
-
-// Columns that hold notes about the team rather than work (UGRC-CSA's
-// "📌 Team Map" and "🪞 Reflections") are left off the embed.
-const HIDDEN = /team map|reflection/i;
-
-const LABELS = Object.fromEntries(STAGES.map((stage) => [stage.key, stage.label]));
 
 function valueOf(item, field) {
   if (!field) return null;
@@ -163,38 +192,40 @@ function linkedPrs(value) {
 // never kept.
 //
 // Columns follow the board's Status options, in the board's order. Statuses
-// with a familiar name share their stage's column ("Todo" and "Ready" are both
+// with a stage's words share that stage's column ("Todo" and "Ready" are both
 // To do), so a board shows only the stages it has; any other status keeps a
-// column of its own name, so no card goes missing. Cards with no status get a
-// "No status" column first, as on GitHub. Backlog columns start hidden behind
-// a toggle, and so does No status on a board that has a Backlog of its own.
-export function normalizeBoard({ project, fields, items }, { filterName = '', url } = {}) {
-  const picked = pickFields(fields, filterName);
+// column of its own name, so no card goes missing. The capstone's columns
+// list is applied first. Cards with no status get a column at the front, as
+// on GitHub, collapsed along with the board's other collapsed columns.
+export function normalizeBoard({ project, fields, items }, { filterName = '', url, config }) {
+  const picked = pickFields(fields, filterName, config);
   const columns = [];
   const columnOf = new Map();   // status name → its column, or null when hidden
   const columnFor = (status) => {
     if (!columnOf.has(status)) {
+      const own = config.overrides.get(nameKey(status)) || {};
       let column = null;
-      if (!HIDDEN.test(status)) {
-        const stage = stageOf(status);
-        const key = stage || `status:${status}`;
+      if (!own.hidden) {
+        const named = String(own.stage ?? '').toLowerCase();
+        const stage = config.stages.find((s) => s.key.toLowerCase() === named) || stageFor(status, config);
+        const key = own.label || !stage ? `status:${status}` : stage.key;
         column = columns.find((c) => c.key === key);
         if (!column) {
-          // The backlog keeps the board's own name for it ("Parking Lot",
-          // "Icebox"); the other stages use the embed's.
-          const label = stage === 'backlog' ? status : (stage ? LABELS[stage] : status);
-          column = { key, label, stage, toggle: stage === 'backlog' };
+          // A board_name stage (the backlog) keeps the board's own name for
+          // its column ("Parking Lot", "Icebox").
+          const label = own.label || (!stage || stage.boardName ? status : stage.label);
+          column = { key, label: String(label), stage: stage?.key ?? null, collapsed: Boolean(stage?.collapsed), done: Boolean(stage?.done) };
           columns.push(column);
-        } else if (stage === 'backlog') {
-          column.label = LABELS.backlog;   // two of the board's columns share it
+        } else if (stage?.boardName) {
+          column.label = stage.label;   // two of the board's statuses share it
         }
+        if (typeof own.collapsed === 'boolean') column.collapsed = own.collapsed;
       }
       columnOf.set(status, column);
     }
     return columnOf.get(status);
   };
   (picked.status?.options || []).forEach(columnFor);
-  const hasBacklog = columns.some((c) => c.stage === 'backlog');
   let noStatus = null;
 
   const cards = [];
@@ -205,11 +236,10 @@ export function normalizeBoard({ project, fields, items }, { filterName = '', ur
     if (status) {
       column = columnFor(status);
     } else {
-      noStatus = noStatus || { key: 'none', label: 'No status', stage: 'backlog', toggle: hasBacklog };
+      noStatus = noStatus || { key: 'none', label: textOf(config, 'no_status'), stage: null, collapsed: false, done: false };
       column = noStatus;
     }
     if (!column) continue;
-    const { stage } = column;
     const content = item.content || {};
     const draft = item.content_type === 'DraftIssue';
     const people = [
@@ -221,34 +251,41 @@ export function normalizeBoard({ project, fields, items }, { filterName = '', ur
     const ownPage = !draft && String(content.html_url || '').startsWith('https://github.com/');
     cards.push({
       id: item.id,
-      title: content.title || 'Untitled card',
+      title: content.title || textOf(config, 'untitled'),
       url: ownPage ? content.html_url : `${url}?pane=issue&itemId=${item.id}`,
       number: draft ? null : (content.number ?? null),
-      stage,
+      stage: column.stage,
       status,
       column: column.key,
       group: optionName(valueOf(item, picked.group)),
-      priority: optionName(valueOf(item, picked.priority)),
-      topic: optionName(valueOf(item, picked.topic)),
       people,
+      details: picked.details
+        .map((field) => ({ name: field.name, value: optionName(valueOf(item, field)) }))
+        .filter((detail) => detail.value),
       checklist: checklistOf(content.body),
       prs: linkedPrs(valueOf(item, picked.prs)),
-      shipped: dayOf(valueOf(item, picked.shipped)) || (stage === 'done' ? dayOf(content.merged_at || content.closed_at) : null),
+      // Finished work shows the day it shipped: the Shipped date, or the day it merged or closed.
+      shipped: column.done ? (dayOf(valueOf(item, picked.shipped)) || dayOf(content.merged_at || content.closed_at)) : null,
     });
     if (!updated || item.updated_at > updated) updated = item.updated_at;
   }
-  if (noStatus) columns.unshift(noStatus);
+  if (noStatus) {
+    noStatus.collapsed = columns.some((column) => column.collapsed);
+    columns.unshift(noStatus);
+  }
 
   // A filter button for each option some card has; an option nobody has
-  // picked would only ever show an empty board.
+  // picked would only ever show an empty board. Shared options (Everyone)
+  // are for cards the whole team shares: their cards show under every button.
   const options = picked.group?.options || [];
   const used = new Set(cards.map((card) => card.group));
+  const isShared = (name) => config.shared.includes(nameKey(name));
   return {
-    title: project?.title || 'Project board',
+    title: project?.title || textOf(config, 'title'),
     url,
     filterName: picked.group?.name || '',
-    groups: options.filter((name) => !SHARED.test(name) && used.has(name)),
-    shared: options.filter((name) => SHARED.test(name)),
+    groups: options.filter((name) => !isShared(name) && used.has(name)),
+    shared: options.filter(isShared),
     columns,
     cards,
     updated,
@@ -297,7 +334,7 @@ async function getJson(url, fetchImpl, now) {
 // A fresh copy of the board. The project's title and field ids are reused
 // from `meta` when they are under a day old (metaAt), so a refresh is usually
 // just the cards: per_page=100, following Link rel="next" for up to 5 pages.
-export async function refreshBoard(ref, { filterName = '', meta = null, metaAt = 0, fetchImpl = fetch, now = Date.now() } = {}) {
+export async function refreshBoard(ref, { filterName = '', config, meta = null, metaAt = 0, fetchImpl = fetch, now = Date.now() } = {}) {
   let { title, fields } = meta || {};
   let fetchedMetaAt = metaAt;
   if (!meta || now - metaAt >= META_MS) {
@@ -309,9 +346,9 @@ export async function refreshBoard(ref, { filterName = '', meta = null, metaAt =
     fields = fieldList.body;
     fetchedMetaAt = now;
   }
-  const picked = pickFields(fields, filterName);
-  const ids = [picked.status, picked.group, picked.people, picked.shipped, picked.priority, picked.topic, picked.prs]
-    .filter(Boolean).map((f) => f.id);
+  const picked = pickFields(fields, filterName, config);
+  const ids = [...new Set([picked.status, picked.group, picked.people, picked.shipped, picked.prs, ...picked.details]
+    .filter(Boolean).map((f) => f.id))];
   const items = [];
   let next = `${API}/${ref.apiPath}/items?per_page=100${ids.length ? `&fields=${ids.join(',')}` : ''}`;
   for (let page = 0; next && page < MAX_PAGES; page += 1) {
@@ -320,7 +357,7 @@ export async function refreshBoard(ref, { filterName = '', meta = null, metaAt =
     next = result.next;
   }
   return {
-    board: normalizeBoard({ project: { title }, fields, items }, { filterName, url: ref.url }),
+    board: normalizeBoard({ project: { title }, fields, items }, { filterName, url: ref.url, config }),
     meta: { title, fields },
     metaAt: fetchedMetaAt,
     fetchedAt: now,
@@ -361,17 +398,15 @@ export function filterCards(board, group) {
   return board.cards.filter((card) => card.group === group || board.shared.includes(card.group));
 }
 
-// One column's cards: done work most recently shipped first (undated last),
-// every other column in the board's own order.
+// One column's cards: finished work most recently shipped first (undated
+// last), every other column in the board's own order.
 export function columnCards(cards, column) {
   const list = cards.filter((card) => card.column === column.key);
-  if (column.stage === 'done') list.sort((a, b) => (b.shipped || '').localeCompare(a.shipped || ''));
+  if (column.done) list.sort((a, b) => (b.shipped || '').localeCompare(a.shipped || ''));
   return list;
 }
 
 /* ── Drawing ─────────────────────────────────────────────────────────── */
-
-const PER_COLUMN = 5;
 
 function el(tag, className, text) {
   const node = document.createElement(tag);
@@ -399,23 +434,21 @@ function setStatus(section, text) {
   status.hidden = !text;
 }
 
-const PR_MARKS = { merged: ' ✓', open: '', draft: ' draft', closed: ' closed' };
-
 // The evidence a card carries for its column's gate: how much of its checklist
 // is ticked, and the pull requests linked to it. Pills, in the accent when
 // complete (every box ticked, a PR merged). They are text, not links: the
 // whole card is already a link, and the issue lists its pull requests.
-function evidence(card) {
+function evidence(card, say) {
   const pills = [];
   if (card.checklist) {
     const { done, total } = card.checklist;
-    const pill = statusPill(done === total ? 'good' : 'neutral', `☑ ${done}/${total}`);
-    pill.title = `Checklist: ${done} of ${total} done`;
+    const pill = statusPill(done === total ? 'good' : 'neutral', say('checklist', { done, total }));
+    pill.title = say('checklist_title', { done, total });
     pills.push(pill);
   }
   (card.prs || []).forEach((pr) => {
-    const pill = statusPill(pr.state === 'merged' ? 'good' : 'neutral', `PR #${pr.number}${PR_MARKS[pr.state]}`);
-    pill.title = `Pull request #${pr.number} (${pr.state}): ${pr.title}`;
+    const pill = statusPill(pr.state === 'merged' ? 'good' : 'neutral', say(`pr_${pr.state}`, { n: pr.number }));
+    pill.title = say('pr_title', { n: pr.number, title: pr.title });
     pills.push(pill);
   });
   if (!pills.length) return null;
@@ -426,9 +459,9 @@ function evidence(card) {
 
 // One card: a link to the issue, pull request or draft. Above the name, its
 // group (when every group is showing) and its number; under it, its people,
-// once done the day it shipped, its Priority and Topic when the board has
-// them, then its evidence.
-function cardLink(card, showGroup) {
+// once done the day it shipped, the card_fields the board has, then its
+// evidence.
+function cardLink(card, showGroup, say) {
   const link = el('a', 'ocs__kanban-item');
   link.href = card.url;
   link.target = '_blank';
@@ -436,20 +469,20 @@ function cardLink(card, showGroup) {
   const kicker = [showGroup && card.group, card.number && `#${card.number}`].filter(Boolean).join(' · ');
   if (kicker) link.appendChild(el('div', 'ocs__kanban-kicker', kicker));
   link.appendChild(el('div', 'ocs__kanban-name', card.title));
-  const note = [card.people.join(', '), card.stage === 'done' && card.shipped && shortDay(card.shipped)].filter(Boolean).join(' · ');
+  const note = [card.people.join(', '), card.shipped && shortDay(card.shipped)].filter(Boolean).join(' · ');
   if (note) link.appendChild(el('div', 'ocs__kanban-note', note));
-  if (card.priority) link.appendChild(el('div', 'ocs__kanban-note', `Priority: ${card.priority}`));
-  if (card.topic) link.appendChild(el('div', 'ocs__kanban-note', `Topic: ${card.topic}`));
-  const proof = evidence(card);
+  card.details.forEach(({ name, value }) => link.appendChild(el('div', 'ocs__kanban-note', say('card_field', { name, value }))));
+  const proof = evidence(card, say);
   if (proof) link.appendChild(proof);
   return link;
 }
 
 // A board drawn into its section. It keeps what the reader chose (group,
-// backlog, opened columns) across refreshes.
-function boardView(section) {
+// collapsed columns shown, opened columns) across refreshes.
+function boardView(section, config) {
+  const say = (key, values) => textOf(config, key, values);
   const mount = section.querySelector('[data-hook="mount"]');
-  const state = { group: 'all', backlog: false, open: new Set() };
+  const state = { group: 'all', expanded: false, open: new Set() };
   let board = null;
   let warned = false;   // about a filter field the board doesn't have, once
 
@@ -459,13 +492,14 @@ function boardView(section) {
     mount.querySelector(selector)?.focus();
   }
 
-  // The filter buttons (selected one in the accent fill) and the backlog
-  // toggle share one ocs__links row; the row is left out when it would be empty.
+  // The filter buttons (selected one in the accent fill) and the toggle for
+  // collapsed columns share one ocs__links row; the row is left out when it
+  // would be empty.
   function controls(cards) {
     const row = el('div', 'ocs__links');
     if (board.groups.length >= 2) {
       row.appendChild(el('span', 'ocs__text', board.filterName));
-      [['all', 'All'], ...board.groups.map((group) => [group, group])].forEach(([value, label], i) => {
+      [['all', say('all')], ...board.groups.map((group) => [group, group])].forEach(([value, label], i) => {
         const on = state.group === value;
         const button = el('button', `ocs__btn small pill${on ? ' accent fill' : ''}`, label);
         button.type = 'button';
@@ -479,29 +513,32 @@ function boardView(section) {
         row.appendChild(button);
       });
     }
-    const toggled = new Set(board.columns.filter((column) => column.toggle).map((column) => column.key));
-    const backlog = cards.filter((card) => toggled.has(card.column)).length;
-    if (backlog) {
+    const collapsed = board.columns.filter((col) => col.collapsed);
+    const keys = new Set(collapsed.map((col) => col.key));
+    const count = cards.filter((card) => keys.has(card.column)).length;
+    if (count) {
       const toggle = el('label', 'ocs__toggle');
       const input = el('input', 'ocs__toggle-input');
       input.type = 'checkbox';
-      input.checked = state.backlog;
-      input.dataset.backlog = '';
+      input.checked = state.expanded;
+      input.dataset.expand = '';
       input.addEventListener('change', () => {
-        state.backlog = input.checked;
-        renderAndFocus('[data-backlog]');
+        state.expanded = input.checked;
+        renderAndFocus('[data-expand]');
       });
       const track = el('span', 'ocs__toggle-track');
       track.setAttribute('aria-hidden', 'true');
-      // The toggle uses the board's own name for its backlog ("Parking Lot").
-      const named = board.columns.find((col) => col.stage === 'backlog' && col.key !== 'none');
-      toggle.append(input, track, el('span', 'ocs__toggle-label', `${named ? named.label : LABELS.backlog} (${backlog})`));
+      // Named for the column when the board collapses just one ("Parking Lot");
+      // the No status column only goes along with it.
+      const named = collapsed.filter((col) => col.key !== 'none');
+      const name = named.length === 1 ? named[0].label : say('collapsed_columns');
+      toggle.append(input, track, el('span', 'ocs__toggle-label', say('toggle', { name, n: count })));
       row.appendChild(toggle);
     }
     return row.childElementCount ? [row] : [];
   }
 
-  // One column: its name and count over its first PER_COLUMN cards, then a
+  // One column: its name and count over its first per_column cards, then a
   // "+N more" pill that opens the rest. data-stage picks the color of the line
   // across its top; a column of the board's own (no stage) gets the plain one.
   function column(col, cards, showGroup) {
@@ -512,11 +549,11 @@ function boardView(section) {
     const heading = el('div');
     heading.append(el('strong', '', col.label), ' ', statusPill('neutral', String(list.length)));
     item.appendChild(heading);
-    if (!list.length) item.appendChild(el('div', 'ocs__text', 'Nothing here'));
+    if (!list.length) item.appendChild(el('div', 'ocs__text', say('empty')));
     const open = state.open.has(col.key);
-    (open ? list : list.slice(0, PER_COLUMN)).forEach((card) => item.appendChild(cardLink(card, showGroup)));
-    if (list.length > PER_COLUMN) {
-      const more = el('a', 'ocs__status-pill ocs__status-pill--neutral', open ? 'Show less' : `+${list.length - PER_COLUMN} more`);
+    (open ? list : list.slice(0, config.perColumn)).forEach((card) => item.appendChild(cardLink(card, showGroup, say)));
+    if (list.length > config.perColumn) {
+      const more = el('a', 'ocs__status-pill ocs__status-pill--neutral', open ? say('less') : say('more', { n: list.length - config.perColumn }));
       more.href = '#';
       more.dataset.columnToggle = String(index);
       more.setAttribute('aria-expanded', String(open));
@@ -539,7 +576,7 @@ function boardView(section) {
     const showGroup = state.group === 'all' && board.groups.length > 0;
     const columns = el('ul', 'ocs__kanban-board');
     board.columns
-      .filter((col) => state.backlog || !col.toggle)
+      .filter((col) => state.expanded || !col.collapsed)
       .forEach((col) => columns.appendChild(column(col, cards, showGroup)));
     const body = el('div', 'ocs__keypoints');
     body.append(...controls(cards), columns);
@@ -560,10 +597,11 @@ function boardView(section) {
         section.setAttribute('aria-label', board.title);
       }
       const count = board.cards.length;
-      const changed = board.updated
-        ? ` · last change ${new Date(board.updated).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
-        : '';
-      section.querySelector('[data-hook="meta"]').textContent = `${count} card${count === 1 ? '' : 's'}${changed}`;
+      const meta = [say(count === 1 ? 'one_card' : 'cards', { n: count })];
+      if (board.updated) {
+        meta.push(say('last_change', { date: new Date(board.updated).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }));
+      }
+      section.querySelector('[data-hook="meta"]').textContent = meta.join(' · ');
       mount.hidden = false;
       render();
     },
@@ -574,46 +612,71 @@ function boardView(section) {
 
 // What the reader is told when GitHub doesn't hand over a fresh board,
 // depending on whether a saved copy is on screen.
-function notice(entry, error) {
-  const saved = entry?.board ? `Showing the copy saved ${shortTime(entry.fetchedAt)}. ` : '';
-  if (error.kind === 'missing') {
-    return saved ? `${saved}GitHub no longer shows this board publicly.`
-      : 'This board is private or the link is wrong. Only public boards can be shown here.';
-  }
-  if (error.kind === 'auth') return `${saved}GitHub shows this board's cards only to people signed in to GitHub.`;
+function notice(entry, error, say) {
+  const saved = entry?.board ? `${say('saved', { time: shortTime(entry.fetchedAt) })} ` : '';
+  if (error.kind === 'missing') return saved ? `${saved}${say('gone')}` : say('missing');
+  if (error.kind === 'auth') return `${saved}${say('auth')}`;
   if (error.kind === 'limit') {
-    const reset = error.resetAt ? ` It resets at ${shortTime(error.resetAt)}.` : '';
-    return `${saved}GitHub's hourly limit for visitors on this network was reached.${reset}`;
+    const reset = error.resetAt ? ` ${say('resets', { time: shortTime(error.resetAt) })}` : '';
+    return `${saved}${say('limit')}${reset}`;
   }
-  return `${saved}GitHub didn't answer.`;
+  return `${saved}${say('no_answer')}`;
+}
+
+function readJson(node) {
+  try { return node ? JSON.parse(node.textContent) : null; } catch (_) { return null; }
+}
+
+// A short fingerprint of a board's settings, so a copy saved under other
+// settings (the capstone changed its columns list) isn't drawn.
+function fingerprint(text) {
+  let hash = 0;
+  for (let i = 0; i < text.length; i += 1) hash = (Math.imul(hash, 31) + text.charCodeAt(i)) | 0;
+  return (hash >>> 0).toString(36);
+}
+
+// The include puts the site's defaults on the page once, and each board's
+// own columns list inside its section, both as JSON.
+function settingsOf(section) {
+  const defaults = readJson(document.getElementById('ocs-kanban-defaults'));
+  if (!defaults) return null;
+  const columns = readJson(section.querySelector('script[data-hook="columns"]'));
+  return { config: boardConfig(defaults, columns), stamp: fingerprint(JSON.stringify([defaults, columns])) };
 }
 
 async function mountBoard(section) {
+  const settings = settingsOf(section);
+  if (!settings) {
+    console.error('Kanban board: the page has no #ocs-kanban-defaults; add the board with _includes/ocs_kanban_board.html.');
+    return;
+  }
+  const { config, stamp } = settings;
+  const say = (key, values) => textOf(config, key, values);
   const ref = parseBoardUrl(section.dataset.boardUrl || '');
   if (!ref) {
-    setStatus(section, "This isn't the address of a GitHub project board.");
+    setStatus(section, say('not_a_board'));
     return;
   }
   // Asking would cost three of the 60 requests and always come back 401.
   if (ref.personal) {
-    setStatus(section, "GitHub shows a personal board's cards only to people signed in to GitHub, so only boards owned by an organization can be shown here.");
+    setStatus(section, say('personal'));
     return;
   }
   const filterName = section.dataset.filter || '';
-  const key = `ocs-kanban:v4:${ref.apiPath}:${filterName}`;
-  const view = boardView(section);
+  const key = `ocs-kanban:v5:${ref.apiPath}:${filterName}:${stamp}`;
+  const view = boardView(section, config);
   let entry = readEntry(key);
   if (entry?.board) view.show(entry.board);
 
   const state = cacheState(entry, Date.now());
   if (state === 'fresh') return;
   if (state === 'blocked') {
-    setStatus(section, notice(entry, new BoardError('limit', '', entry.retryAt)));
+    setStatus(section, notice(entry, new BoardError('limit', '', entry.retryAt), say));
     return;
   }
-  if (!entry?.board) setStatus(section, 'Loading the board from GitHub…');
+  if (!entry?.board) setStatus(section, say('loading'));
   try {
-    entry = await refreshBoard(ref, { filterName, meta: entry?.meta, metaAt: entry?.metaAt });
+    entry = await refreshBoard(ref, { filterName, config, meta: entry?.meta, metaAt: entry?.metaAt });
     writeEntry(key, entry);
     view.show(entry.board);
     setStatus(section, '');
@@ -622,7 +685,7 @@ async function mountBoard(section) {
     const error = err instanceof BoardError ? err : new BoardError('network', err.message);
     // Don't ask again before the limit resets (or for 10 minutes if GitHub didn't say).
     if (error.kind === 'limit') writeEntry(key, { ...entry, retryAt: error.resetAt || Date.now() + FRESH_MS });
-    setStatus(section, notice(entry, error));
+    setStatus(section, notice(entry, error, say));
   }
 }
 
