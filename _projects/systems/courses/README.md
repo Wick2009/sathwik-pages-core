@@ -140,10 +140,12 @@ This is a reusable frontend kit, not a standalone backend or complete theme:
   Subject/activity-specific lesson layouts and games remain separate; their
   existing completion-helper URLs are supplied by Blogs. Legacy study/capture
   viewers still consume shared Fabric.js and `assets/js/solitaire/ai-grader.js`.
-- **Chat:** shared `assets/js/chat/rich-text.js`, group-management clients,
-  SockJS/STOMP libraries, and Spring `/ws-chat` remain external dependencies.
-  The group dashboard and lesson chat contain parallel chat logic; synchronize
-  relevant fixes rather than creating another implementation.
+- **Chat:** the announcement and lesson chats talk to Spring through
+  [messages](../messages/README.md)' `chat-socket.js`, `messages-api.js` and
+  `messages-model.js` (`assets/js/projects/messages/`, so Messages must be built),
+  plus the shared `assets/js/chat/rich-text.js`. Spring `/ws-chat` and the SockJS/STOMP
+  builds `chat-socket.js` loads remain external. Change the protocol in those
+  modules, not in the includes; `tests/course_chats.test.mjs` checks the imports.
 - **Calendar:** [calendar](../calendar/README.md) owns its API/UI runtime and
   `assets/js/projects/calendar/` modules. This kit owns the consuming interfaces.
   `_data/school_calendar.yml` stays shared. Calendar sync requires calendar to
@@ -186,7 +188,7 @@ Root entry points preserve existing test commands while the test implementations
 live with the kit and read source files rather than stale generated copies:
 
 ```sh
-node --test tests/course_entry.test.mjs tests/course_navigation_state.test.mjs tests/lesson_completion.test.mjs
+node --test tests/course_entry.test.mjs tests/course_navigation_state.test.mjs tests/lesson_completion.test.mjs tests/course_chats.test.mjs
 bundle exec ruby scripts/test_course_distribution.rb
 bundle exec ruby scripts/test_course_landing_pages.rb
 bundle exec ruby scripts/test_player_pages.rb

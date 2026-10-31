@@ -163,5 +163,5 @@ runners/forms; it directs interactive work to the full document page.
 - `bundle exec ruby scripts/test_blog_catalog.rb`: catalog behavior.
 - `bundle exec ruby scripts/test_course_landing_pages.rb`: composed course views.
 - `bundle exec ruby scripts/test_course_distribution.rb`: shared publication.
-- `node --test tests/course_entry.test.mjs tests/course_navigation_state.test.mjs tests/lesson_completion.test.mjs`.
+- `node --test tests/course_entry.test.mjs tests/course_navigation_state.test.mjs tests/lesson_completion.test.mjs tests/course_chats.test.mjs`.
 - Registered dev build, Jekyll/Ruby-Sass build, and course/global reader browser checks.
