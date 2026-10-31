@@ -34,8 +34,8 @@ export const springEnabled = "{{ site.spring }}" !== "false";
 
 export var javaWebSocketURI;
 // Port 8589 only exists on localhost; in production nginx forwards /ws-chat
-// through javaURI's normal port (443), same as announcement_chat.html and
-// lesson_chat.html's buildChatSocketEndpoint() already do.
+// through javaURI's normal port (443). Messages' chat-socket.js connects here,
+// for /dm and for the course chats.
 if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
     javaWebSocketURI = "http://localhost:8589";
 } else {

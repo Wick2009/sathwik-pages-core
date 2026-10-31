@@ -1,9 +1,9 @@
 <!-- Class Announcement Chat: always-open WebSocket chat for the whole course. -->
 <!-- One group per course, e.g. "csa-announcements", "csp-announcements". -->
-<!-- Reuses the same STOMP/SockJS backend as _includes/lesson_chat.html and the -->
-<!-- Messages page's group chats (Open-Coding-Society/spring's /api/groups + -->
-<!-- /ws-chat). The group is created automatically on first use if it doesn't -->
-<!-- exist yet, so no manual DB seeding is required. -->
+<!-- Talks to Spring through the Messages system's socket, requests and message -->
+<!-- shape (assets/js/projects/messages/), like lesson_chat.html and /dm. The group -->
+<!-- is created automatically on first use if it doesn't exist yet, so no manual -->
+<!-- DB seeding is required. -->
 <!-- -->
 <!-- Signed-out visitors still get the full UI: the chat drops into a local -->
 <!-- "preview" mode backed by localStorage, so the feature is visible and -->
@@ -78,56 +78,31 @@
 </script>
 
 <script type="module">
-  import { javaURI, pythonURI, fetchOptions } from '{{site.baseurl}}/assets/js/api/config.js';
+  import { javaURI, javaWebSocketURI, pythonURI, fetchOptions } from '{{site.baseurl}}/assets/js/api/config.js';
   import {
     addReplyMarker, createReplyBar, createRichComposer, extractReplyMarker, highlightMessage, readImageFile,
     renderDeletedMessage, renderReplyQuote, renderRichMessage, replyExcerpt,
   } from '{{site.baseurl}}/assets/js/chat/rich-text.js';
   import { attachAnnouncementCalendar } from '{{site.baseurl}}/assets/js/chat/calendar/calendar-announcements.js';
+  import { createChatSocket } from '{{site.baseurl}}/assets/js/projects/messages/chat-socket.js';
+  import { createMessagesApi } from '{{site.baseurl}}/assets/js/projects/messages/messages-api.js';
+  import { classifyGroupEvent, groupMessage } from '{{site.baseurl}}/assets/js/projects/messages/messages-model.js';
 
   const COURSE = {{ page.course | jsonify }};
   const GROUP_NAME = `${COURSE}-announcements`;
-  const CHAT_SOCKET_PORT = 8589;
   const PREVIEW_KEY = `ocs-chat-preview:${GROUP_NAME}`;
   const PREVIEW_LIMIT = 100;
 
-  const SOCKJS_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js';
-  const STOMP_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js';
-
-  // Shared with the calendar and Messages: load the chat libraries once per page,
-  // and only when a chat actually needs a live connection.
-  function loadScriptOnce(src) {
-    window.__ocsChatScripts = window.__ocsChatScripts || {};
-    if (!window.__ocsChatScripts[src]) {
-      window.__ocsChatScripts[src] = new Promise((resolve, reject) => {
-        const el = document.createElement('script');
-        el.src = src;
-        el.onload = resolve;
-        el.onerror = () => reject(new Error(`failed to load ${src}`));
-        document.head.appendChild(el);
-      });
-    }
-    return window.__ocsChatScripts[src];
-  }
-
-  async function loadChatLibraries() {
-    await loadScriptOnce(SOCKJS_SRC);
-    await loadScriptOnce(STOMP_SRC);
-  }
-
-  function buildChatSocketEndpoint() {
-    const uri = new URL(javaURI);
-    if (uri.hostname === 'localhost' || uri.hostname === '127.0.0.1') {
-      return `${uri.protocol}//${uri.hostname}:${CHAT_SOCKET_PORT}/ws-chat`;
-    }
-    return javaURI + '/ws-chat';
-  }
+  const api = createMessagesApi({ javaURI, pythonURI, fetchOptions });
+  const socket = createChatSocket(javaWebSocketURI, {
+    onClose: () => {
+      setStatus('disconnected', 'is-error');
+      setComposerEnabled(false);
+    },
+  });
 
   const state = {
-    backboneGroupId: null,
-    stompClient: null,
-    subscription: null,
-    connected: false,
+    groupId: null,
     initialized: false,
     mode: 'live', // 'live' once connected to the backend, 'preview' when local-only
     currentUserDisplayName: 'You',
@@ -650,12 +625,28 @@
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
 
-  function eventKey(event) {
-    return [event?.sender || '', event?.date || '', event?.message || ''].join('|');
+  // Messages' groupMessage() shape ({ key, senderKey, body, sentAt, … }) as the entry
+  // this page draws: `sender` is the saved display name (empty when Spring lost it).
+  function entryOf(model) {
+    return {
+      id: model.id, key: model.key, sender: model.senderKey, message: model.body,
+      date: model.sentAt, edited: model.edited, image: model.image,
+    };
+  }
+
+  // Preview messages are kept as { id, sender, message, date, image, deleted }.
+  function previewEntry(saved) {
+    return { ...entryOf(groupMessage({ ...saved, author: saved.sender })), deleted: Boolean(saved.deleted) };
+  }
+
+  function showOnce(entry) {
+    if (state.seenKeys.has(entry.key)) return;
+    state.seenKeys.add(entry.key);
+    appendMessage(entry);
   }
 
   /* ── Local preview mode ─────────────────────────────────────────────
-     Used when nobody is signed in (or the backbone is unreachable) so the
+     Used when nobody is signed in (or Spring is unreachable) so the
      announcements panel stays visible and usable. Messages are kept in
      localStorage for this browser only. */
 
@@ -699,12 +690,7 @@
     setStatus('preview', 'is-preview');
     showNote(`${reason} This is a local preview — messages stay in this browser and are not sent to the class.`);
 
-    readPreviewMessages().forEach((msg) => {
-      const key = eventKey(msg);
-      if (state.seenKeys.has(key)) return;
-      state.seenKeys.add(key);
-      appendMessage(msg);
-    });
+    readPreviewMessages().map(previewEntry).forEach(showOnce);
 
     setComposerEnabled(true);
   }
@@ -732,135 +718,77 @@
   // doesn't return one. Best-effort: initials stay the fallback on failure.
   async function fetchCurrentUserPfp() {
     try {
-      const res = await fetch(`${javaURI}/api/person/get`, fetchOptions);
-      if (!res.ok) return;
-      const person = await res.json();
+      const person = await api.currentPerson();
       if (person?.pfp) state.currentUserPfp = person.pfp;
     } catch (err) {
       console.warn('Announcement chat: pfp lookup failed', err);
     }
   }
 
+  // Null when Spring didn't make it, e.g. 409 because someone made it a moment ago.
   async function createGroup() {
-    const res = await fetch(`${javaURI}/api/groups`, {
-      ...fetchOptions,
-      method: 'POST',
-      body: JSON.stringify({ name: GROUP_NAME, period: '', course: COURSE, memberIds: [] }),
-    });
-    if (res.status === 201) {
-      const body = await res.json();
-      return Number(body?.id) || null;
+    try {
+      const group = await api.createGroup({ name: GROUP_NAME, period: '', course: COURSE, memberIds: [] });
+      return Number(group?.id) || null;
+    } catch (err) {
+      return null;
     }
-    // 409 = someone else created it a moment ago; fall through to re-search.
-    return null;
   }
 
-  async function resolveBackboneGroup() {
+  async function findGroup() {
+    const groups = await api.searchGroups(GROUP_NAME);
+    return Array.isArray(groups) ? groups.find((g) => (g?.name || '') === GROUP_NAME) : groups;
+  }
+
+  async function resolveGroup() {
     const cacheKey = `__announcementChatGroupId_${COURSE}`;
-    if (window[cacheKey]) { state.backboneGroupId = window[cacheKey]; return true; }
+    if (window[cacheKey]) { state.groupId = window[cacheKey]; return true; }
 
-    const url = `${javaURI}/api/groups/search?name=${encodeURIComponent(GROUP_NAME)}`;
-    let res;
-    try { res = await fetch(url, fetchOptions); }
-    catch (err) { console.warn('Announcement chat: group lookup network error', err); return false; }
-    if (!res.ok) { console.warn('Announcement chat: group lookup HTTP', res.status); return false; }
-
-    let body;
-    try { body = await res.json(); }
-    catch (err) { console.warn('Announcement chat: group lookup non-JSON response', err); return false; }
-
-    let match = Array.isArray(body) ? body.find((g) => (g?.name || '') === GROUP_NAME) : body;
+    let match;
+    try { match = await findGroup(); }
+    catch (err) { console.warn('Announcement chat: group lookup failed', err); return false; }
 
     if (!match) {
       const createdId = await createGroup();
       if (createdId) {
-        state.backboneGroupId = createdId;
+        state.groupId = createdId;
         window[cacheKey] = createdId;
         return true;
       }
       // Someone else beat us to creating it — re-search once.
-      try {
-        const retryRes = await fetch(url, fetchOptions);
-        if (retryRes.ok) {
-          const retryBody = await retryRes.json();
-          match = Array.isArray(retryBody) ? retryBody.find((g) => (g?.name || '') === GROUP_NAME) : retryBody;
-        }
-      } catch (err) { /* ignore, handled below */ }
+      try { match = await findGroup(); } catch (err) { /* ignore, handled below */ }
     }
 
     const id = Number(match?.id);
     if (!id) { console.warn('Announcement chat: could not resolve or create group', GROUP_NAME); return false; }
-    state.backboneGroupId = id;
+    state.groupId = id;
     window[cacheKey] = id;
     return true;
   }
 
   async function loadHistory() {
-    if (!state.backboneGroupId) return;
+    if (!state.groupId) return;
     try {
-      const res = await fetch(`${javaURI}/api/groups/chat/${state.backboneGroupId}/messages`, fetchOptions);
-      if (!res.ok) { console.warn('Announcement chat: history HTTP', res.status); return; }
-      const messages = await res.json();
-      // Spring calls a saved message's sender `author`; the socket frame calls it `sender`.
-      (messages || []).forEach((msg) => {
-        const key = eventKey({ sender: msg.author, date: msg.date, message: msg.message });
-        if (state.seenKeys.has(key)) return;
-        state.seenKeys.add(key);
-        appendMessage({ id: msg.id, sender: msg.author, message: msg.message, date: msg.date, edited: msg.edited, image: msg.image });
-      });
+      const saved = await api.groupMessages(state.groupId);
+      (saved || []).map((raw) => entryOf(groupMessage(raw))).forEach(showOnce);
     } catch (err) {
       console.warn('Announcement chat: history load failed', err);
     }
   }
 
-  function handleIncoming(event) {
-    if (!event) return;
-    if (event.context === 'deleteMessageServer') {
-      markMessageDeleted(event.messageId);
-      return;
-    }
-    if (event.context === 'editMessageServer') {
-      updateMessageBody(event.messageId, event.message);
-      return;
-    }
-    if (event.context !== 'sendMessageServer') return;
-    const key = eventKey(event);
-    if (state.seenKeys.has(key)) return;
-    state.seenKeys.add(key);
-    appendMessage({ id: event.messageId, sender: event.sender, message: event.message, date: event.date, image: event.image });
+  function handleIncoming(frame) {
+    const event = classifyGroupEvent(frame);
+    if (event.type === 'delete') markMessageDeleted(event.id);
+    else if (event.type === 'edit') updateMessageBody(event.id, event.body);
+    else if (event.type === 'message') showOnce(entryOf(event.message));
   }
 
-  function connect() {
-    return new Promise((resolve) => {
-      if (state.connected) return resolve(true);
-      if (typeof SockJS === 'undefined' || typeof Stomp === 'undefined') { return resolve(false); }
-      setStatus('connecting…');
-      const socket = new SockJS(buildChatSocketEndpoint());
-      const client = Stomp.over(socket);
-      client.debug = null;
-      state.stompClient = client;
-
-      client.connect({}, () => {
-        state.connected = true;
-        setStatus('connected', 'is-live');
-        state.subscription = client.subscribe(`/topic/group/${state.backboneGroupId}`, (frame) => {
-          try { handleIncoming(JSON.parse(frame.body)); }
-          catch (err) { console.warn('Announcement chat: bad frame', err); }
-        });
-        resolve(true);
-      }, (err) => {
-        console.warn('Announcement chat: connection failed', err);
-        state.connected = false;
-        resolve(false);
-      });
-
-      socket.onclose = () => {
-        if (!state.connected) return;
-        state.connected = false;
-        setStatus('disconnected', 'is-error');
-        setComposerEnabled(false);
-      };
-    });
+  async function connect() {
+    setStatus('connecting…');
+    if (!(await socket.connect())) return false;
+    socket.follow(`/topic/group/${state.groupId}`, handleIncoming);
+    setStatus('connected', 'is-live');
+    return true;
   }
 
   // Posted over HTTP, like the Messages page: Spring takes the sender from the
@@ -868,19 +796,15 @@
   // comes back to every reader, this one included, on the group topic.
   async function sendMessage(text, image = null) {
     if (state.mode === 'preview') {
-      const entry = { id: crypto.randomUUID(), sender: state.currentUserDisplayName || 'You', message: text, date: new Date().toISOString(), image };
-      state.seenKeys.add(eventKey(entry));
-      writePreviewMessage(entry);
-      appendMessage(entry);
+      const saved = { id: crypto.randomUUID(), sender: state.currentUserDisplayName || 'You', message: text, date: new Date().toISOString(), image };
+      writePreviewMessage(saved);
+      showOnce(previewEntry(saved));
       return true;
     }
 
-    if (!state.backboneGroupId) return false;
+    if (!state.groupId) return false;
     try {
-      const res = await fetch(`${javaURI}/api/groups/chat/${state.backboneGroupId}/messages`, {
-        ...fetchOptions, method: 'POST', body: JSON.stringify({ message: text, image }),
-      });
-      if (!res.ok) { console.warn('Announcement chat: send HTTP', res.status); return false; }
+      await api.sendGroupMessage(state.groupId, text, image);
       return true;
     } catch (err) {
       console.error('Announcement chat: send failed', err);
@@ -897,13 +821,9 @@
       return true;
     }
 
-    if (!state.backboneGroupId) return false;
+    if (!state.groupId) return false;
     try {
-      const res = await fetch(
-        `${javaURI}/api/groups/chat/${state.backboneGroupId}/messages/${encodeURIComponent(messageId)}`,
-        { ...fetchOptions, method: 'PATCH', body: JSON.stringify({ message: newMessage }) },
-      );
-      if (!res.ok) { console.warn('Announcement chat: edit HTTP', res.status); return false; }
+      await api.editGroupMessage(state.groupId, messageId, newMessage);
       updateMessageBody(messageId, newMessage);
       return true;
     } catch (err) {
@@ -925,19 +845,11 @@
       return true;
     }
 
-    if (!state.backboneGroupId) return false;
+    if (!state.groupId) return false;
     state.deletingMessageIds.add(key);
     showFormMessage('');
     try {
-      const res = await fetch(
-        `${javaURI}/api/groups/chat/${state.backboneGroupId}/messages/${encodeURIComponent(key)}`,
-        { ...fetchOptions, method: 'DELETE' },
-      );
-      if (!res.ok) {
-        console.warn('Announcement chat: delete HTTP', res.status);
-        showFormMessage('Could not delete the message. Please try again.');
-        return false;
-      }
+      await api.deleteGroupMessage(state.groupId, key);
       markMessageDeleted(key);
       return true;
     } catch (err) {
@@ -960,7 +872,7 @@
       return;
     }
 
-    const ok = await resolveBackboneGroup();
+    const ok = await resolveGroup();
     if (!ok) {
       enterPreviewMode('The class chat service is unreachable.');
       return;
@@ -968,9 +880,6 @@
 
     await calendar.start('live');
     await loadHistory();
-
-    try { await loadChatLibraries(); }
-    catch (err) { console.warn('Announcement chat: library load failed', err); }
 
     const connected = await connect();
     if (connected) {
@@ -988,10 +897,7 @@
   });
 
   window.addEventListener('beforeunload', () => {
-    try {
-      if (state.subscription) state.subscription.unsubscribe();
-      if (state.stompClient && state.connected) state.stompClient.disconnect();
-    } catch (_) { /* ignore */ }
+    try { socket.disconnect(); } catch (_) { /* ignore */ }
   });
 
   init();
