@@ -118,10 +118,14 @@ class UiBuilderPagesTest < Minitest::Test
     build(spring: true) do |pages|
       ids = ->(html) { Nokogiri::HTML(html).css("script[id], template").map { |node| node["id"] || node["data-ocs-template"] } }
       assert_equal JSON_SCRIPTS, ids.call(pages["include-default"]), "today's output: the three data scripts"
-      assert_equal JSON_SCRIPTS + ["ui-builder-editor-text"], ids.call(pages["include-editor"])
+      assert_equal JSON_SCRIPTS + %w[ui-builder-editor-text ui-builder-capstone-urls], ids.call(pages["include-editor"])
       editor = Nokogiri::HTML(pages["include-editor"]).at_css("script#ui-builder-editor-text")
       refute_includes editor.inner_html, "<"
       JSON.parse(editor.text)
+      # The /capstone/ addresses already taken (export.js never reuses one): a list of site paths.
+      taken = JSON.parse(Nokogiri::HTML(pages["include-editor"]).at_css("script#ui-builder-capstone-urls").text)
+      assert_kind_of Array, taken
+      assert(taken.all? { |url| url.start_with?("/capstone/") }, taken.inspect)
       assert_equal JSON_SCRIPTS + %w[ocs-kanban-defaults kanban ocsSchoolCalendarData calendar-card], ids.call(pages["include-widgets"])
       assert_equal pages["include-default"].strip, pages["include-widgets"][0, pages["include-default"].strip.size], "widgets only add to today's output"
     end

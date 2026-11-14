@@ -19,7 +19,7 @@ const allSources = [
 const DYNAMIC = [
   'status_DRAFT', 'status_PUBLISHED', 'status_LOCAL', 'status_DELETED', 'rev_SAVE', 'rev_PUBLISH', 'rev_RESTORE',
   'slot_title', 'slot_text', 'slot_image', 'slot_link', 'slot_value', 'slot_label',
-  'export_page', 'export_json', 'show_html', 'revisions', 'page_settings', 'pub_none', 'pub_live', 'pub_changes',
+  'export_capstone', 'export_page', 'export_json', 'show_html', 'revisions', 'page_settings', 'pub_none', 'pub_live', 'pub_changes',
 ];
 
 function matches(pattern) {

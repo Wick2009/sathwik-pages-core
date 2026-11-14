@@ -54,3 +54,37 @@
     min-width: 12rem;
   }
 }
+
+// "What are you making?" (editor-make.js): each page kind is an ocs__hub-card that is also a
+// radio; the picked one is the grammar's ocs__hub-card--selected. The keyboard's card gets the
+// accent ring the grammar gives focused controls.
+.ui-builder-kinds .ui-builder-kind {
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--pref-accent-color);
+    outline-offset: 2px;
+  }
+}
+
+.ui-builder-kind-icon {
+  color: var(--pref-accent-color);
+  font-size: 1.5rem;
+}
+
+// The quick form: two columns of fields on a wide screen; the intro and the team take a whole row.
+.ui-builder-make-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 1.25rem;
+}
+
+.ui-builder-make-wide {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: $uib-phone) {
+  .ui-builder-make-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

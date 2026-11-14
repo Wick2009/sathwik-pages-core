@@ -5,6 +5,7 @@
 // passes the store it picked once (Spring or this browser); here only store.capabilities count.
 import { textOf } from './registry.js';
 import { createPage, normalizePage } from './page-model.js';
+import { blueprintPage } from './blueprint.js';
 import { contentRenderers } from './blocks-content.js';
 import { createRichHooks } from './rich-content.js';
 import { createDialogs, formatWhen } from './editor-dialogs.js';
@@ -198,6 +199,8 @@ export class UiBuilderEditor {
       actions: {
         open: (ref) => { this.navigate(ref); this.route(); },
         create: (key) => this.createFrom(this.makePage(key)),
+        // "What are you making?": the kind's sections, filled from the quick form (blueprint.js).
+        build: (kind, answers) => this.createFrom(normalizePage(blueprintPage(this.registry, kind, answers, { capabilities: { spring: this.caps.cloud === true, flask: true } }), this.registry, { ids: this.ids })),
         importPage: ({ page, errors }) => this.createFrom(page, { notes: errors }),
         resumeNew: (draft) => this.createFrom(normalizePage(draft.page, this.registry, { ids: this.ids }), { draftBase: true }),
         openDraft: viewer,

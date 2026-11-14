@@ -7,6 +7,15 @@ kanban board, visitor feedback) and project blocks (data from your own API, your
 team can put its project, its board, its chat and its live Flask data on one page, publish it
 for the class, and have a teacher approve it for everyone on showcase night.
 
+**Studio.** A new page starts from **What are you making?**: pick Capstone page, N@tM booth, CSP
+team project or Sprint review, fill in a few facts (project, client, repo, board, team), and the
+builder lays out the sections that page needs, already filled in. After that you edit on the page
+itself, the way a site builder does. Hover a section for its toolbar, press **Add section**
+between sections for a library of OCS sections (Our client, Project board, Roadmap by sprint,
+Testing and reviews…), and give a section a style. **Export capstone page file** writes the page
+where capstone pages live, `_posts/capstone/<school_year>/`, listed in the Capstone catalog when
+the page has a course.
+
 See [UI Builder architecture](docs/ARCHITECTURE.md) for how it fits together, the safety rules,
 the backend routes and the tests.
 
@@ -40,7 +49,7 @@ the backend routes and the tests.
 | Source | Published to | What it is |
 |---|---|---|
 | `data/ui_builder.yml` | `_data/ui_builder.yml` | the registry: blocks, fields, limits, templates, every string |
-| `data/ui_builder_school.yml` | `_data/ui_builder_school.yml` | the school pack: courses, announcements and calendar blocks, CSP templates, and the Studio's section presets |
+| `data/ui_builder_school.yml` | `_data/ui_builder_school.yml` | the school pack: courses, announcements and calendar blocks, CSP templates, and the Studio's section presets, page kinds and quick form |
 | `data/ui_builder_editor.yml` | `_data/ui_builder_editor.yml` | the editor's strings |
 | `pages/*.md` | `navigation/ui-builder/` | the editor, canvas, viewer and gallery pages |
 | `layouts/ui-builder-canvas.html` | `_layouts/` | the canvas frame: the site's styles and theme, nothing else from the site head |
@@ -53,8 +62,8 @@ The modules, by job:
 
 | Modules | Job |
 |---|---|
-| `editor-*.js` | the editor at `/ui-builder/`. `editor-app.js` starts it and opens the start screen or a page; the others are the start screen, the editing shell, the outline, the inspector and its fields, the block menu, the section library (`editor-sections.js`), the dialogs, the shortcuts and saving |
-| `section-presets.js` | the section library's pure parts: its groups, and filling a preset's placeholders from what the page already says |
+| `editor-*.js` | the editor at `/ui-builder/`. `editor-app.js` starts it and opens the start screen or a page; the others are the start screen, What are you making? (`editor-make.js`), the editing shell, the outline, the inspector and its fields, the block menu, the section library (`editor-sections.js`), the dialogs, the shortcuts and saving |
+| `section-presets.js`, `blueprint.js` | the Studio's pure parts: the section library's groups, filling a preset's placeholders from the quick form or the page, and a page kind plus answers as a page |
 | `canvas.js`, `canvas-bridge.js` | the preview inside the editor: the page drawn in its iframe, and the editor's side of the connection |
 | `editor-code.js`, `pretty-html.js` | the code view in the preview's place: the page-file HTML block by block, indented and colored like lesson code, with what each block's markup does and the `ocs__` classes it uses |
 | `page-store.js`, `spring-page-store.js`, `draft-store.js` | the stores: pages kept in this browser or in Spring, and the crash copy of the page being edited |

@@ -3,7 +3,7 @@
 // file / HTML exports, revisions, visibility, unpublish and delete, the edit lease (read-only
 // while someone else edits), the conflict choice, crash recovery and closing the page.
 import { findNode, normalizePage, validatePage } from './page-model.js';
-import { pageToMarkdown } from './export.js';
+import { capstoneFile, pageToMarkdown } from './export.js';
 import { slugIssue, suggestSlug } from './url-rules.js';
 import { formatWhen } from './editor-dialogs.js';
 import { el } from './editor-fields.js';
@@ -281,6 +281,21 @@ export const pageActions = {
     }
   },
 
+  // The capstone page file, named for where it goes in the repository
+  // (_posts/capstone/<school_year>/), at an address no other capstone page has.
+  exportCapstone() {
+    try {
+      const file = capstoneFile(this.page, this.app.exportContext(this.meta), new Date());
+      const help = [
+        this.say('capstone_help', { path: file.path }),
+        ...(file.taken ? [this.say('capstone_taken', { taken: file.taken, permalink: file.permalink })] : []),
+        this.say(file.listed ? 'capstone_listed' : 'capstone_unlisted'),
+      ].join(' ');
+      this.app.dialogs.textExport({ title: this.say('capstone_title'), help, content: file.content, filename: file.path.split('/').pop(), mime: 'text/markdown' });
+    } catch (error) {
+      this.failed(error);
+    }
+  },
 
   // Show HTML: the code view, at this block.
   showHtml(id) {

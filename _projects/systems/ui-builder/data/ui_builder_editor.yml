@@ -265,7 +265,7 @@ date_confirm: Approve
 bad_date: Pick a date after today.
 
 # ---- start screen
-start_lead: "Build a page for your project from blocks: headers, cards, your team's board and chat, and live data from your own API."
+start_lead: "Build the page your class needs, like a capstone page or an N@tM booth, from ready-made sections: your client, your board, your team, your evidence. Then change anything on the page itself."
 tabs_label: Pages
 tab_mine: My pages
 tab_templates: Templates
@@ -320,6 +320,17 @@ col_status: Status
 col_updated: Updated
 col_actions: Actions
 # ---- Studio (plans/2026-11-13-ui-builder-studio.md)
+# "What are you making?" (editor-make.js)
+tab_make: What are you making?
+make_lead: Pick the page your class needs. The builder lays out the sections that page should have and fills them with your team's facts.
+make_kinds: Kind of page
+make_sections: "{count} sections"
+make_form_title: "A few facts for your {kind}"
+make_form_lead: Only the project name is needed. Anything you leave empty keeps a sample line to replace on the page.
+make_build: Build my page
+make_blank: Start blank
+make_required: Fill this in to build the page.
+make_missing: Give the project a name first.
 # The section library (editor-sections.js) and the canvas's section chrome (canvas.js)
 library_title: Add a section
 library_lead: Sections made for OCS pages. Each one comes filled with what this page already says.
@@ -333,4 +344,11 @@ canvas_section_tools: "Section {n}"
 # The panels over the canvas (editor-shell.js)
 pane_done: Done
 pane_close: "Close {pane}"
+# The capstone page file (More menu)
+export_capstone: Export capstone page file
+capstone_title: Capstone page file
+capstone_help: "Save this as {path} in your fork of the Pages repository, then open a pull request. It uses the post layout and a /capstone/ address, like the other capstone pages."
+capstone_taken: "Another capstone page already uses {taken}, so this one uses {permalink}."
+capstone_listed: "The Capstone page (/capstone/) lists it under the page's course and school year."
+capstone_unlisted: "To list it on the Capstone page (/capstone/), pick CSA, CSP, CSH or CSSE as the page's course in Page settings first."
 # Store errors are worded by text.store in ui_builder.yml (page-store.js storeErrorText).

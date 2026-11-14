@@ -45,7 +45,9 @@ export function buildShell({ doc = globalThis.document, registry, say, caps = {}
   const live = el(doc, 'a', { class: 'ocs__btn ocs__btn--icon small', href: '#', target: '_blank', rel: 'noopener' }, icon(doc, 'fa-arrow-up-right-from-square'), say('open_live'));
   const publish = el(doc, 'button', { type: 'button', class: 'ocs__btn small accent fill' }, say('publish'));
   const more = el(doc, 'button', { type: 'button', class: 'ocs__btn ocs__btn--icon small', 'aria-haspopup': 'menu', 'aria-expanded': 'false', 'aria-controls': 'ui-more-menu' }, icon(doc, 'fa-ellipsis'), say('more'));
-  const menuNames = ['export_page', 'export_json', 'show_html', ...(caps.revisions ? ['revisions'] : []), 'page_settings'];
+  // The capstone page file comes with page kinds that export one (the school pack's).
+  const capstone = Array.isArray(registry.page_kinds) && registry.page_kinds.some((kind) => kind && kind.export === 'capstone');
+  const menuNames = [...(capstone ? ['export_capstone'] : []), 'export_page', 'export_json', 'show_html', ...(caps.revisions ? ['revisions'] : []), 'page_settings'];
   const menuItems = new Map(menuNames.map((name) => [name, el(doc, 'button', { type: 'button', role: 'menuitem', tabindex: '-1', class: 'ui-builder-menu-item' }, say(name))]));
   const menu = el(doc, 'div', { class: 'ui-builder-menu', id: 'ui-more-menu', role: 'menu', 'aria-label': say('more') }, [...menuItems.values()]);
   const menuWrap = el(doc, 'div', { class: 'ui-builder-menu-wrap', hidden: true }, menu);

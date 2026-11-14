@@ -41,8 +41,8 @@ function deepMerge(base, extra) {
   return out;
 }
 
-// Blocks, text and the blueprint deep-merge (the school pack wins); templates, page fields and the
-// section library (categories and presets) are appended.
+// Blocks, text and the blueprint deep-merge (the school pack wins); templates, page fields, the
+// section library (categories and presets) and the page kinds are appended.
 export function mergeRegistry(generic, school) {
   if (!isObject(school)) return generic;
   return {
@@ -55,11 +55,13 @@ export function mergeRegistry(generic, school) {
     course_codes: [...(generic.course_codes || []), ...(school.course_codes || [])],
     section_categories: [...(generic.section_categories || []), ...(school.section_categories || [])],
     section_presets: [...(generic.section_presets || []), ...(school.section_presets || [])],
+    page_kinds: [...(generic.page_kinds || []), ...(school.page_kinds || [])],
   };
 }
 
 // The Studio data: the section library (every preset in a known category, with one section, no
-// key listed twice). blueprint.fallbacks are the words an empty placeholder becomes.
+// key listed twice) and "What are you making?" (every page kind made of known presets, and the
+// quick form's fields). blueprint.fallbacks are the words an empty placeholder becomes.
 function checkStudio(raw) {
   const categories = Array.isArray(raw.section_categories) ? raw.section_categories : [];
   const categoryKeys = new Set();
@@ -79,10 +81,22 @@ function checkStudio(raw) {
   }
   const blueprint = isObject(raw.blueprint) ? raw.blueprint : {};
   const fallbacks = isObject(blueprint.fallbacks) ? blueprint.fallbacks : {};
+  const kinds = Array.isArray(raw.page_kinds) ? raw.page_kinds : [];
+  const kindKeys = new Set();
+  for (const kind of kinds) {
+    if (!isObject(kind) || typeof kind.key !== 'string' || !kind.key) fail('a page kind has no key');
+    if (kindKeys.has(kind.key)) fail(`page kind ${kind.key} is listed twice`);
+    kindKeys.add(kind.key);
+    for (const key of Array.isArray(kind.sections) ? kind.sections : fail(`page kind ${kind.key} needs a sections list`)) {
+      if (!presetKeys.has(key)) fail(`page kind ${kind.key} uses unknown section preset ${key}`);
+    }
+  }
+  checkFields(blueprint.fields || [], 'blueprint');
   return {
     section_categories: categories,
     section_presets: presets,
-    blueprint: { fallbacks },
+    page_kinds: kinds,
+    blueprint: { fields: blueprint.fields || [], fallbacks },
   };
 }
 
@@ -133,6 +147,9 @@ export function readRegistry(doc = document) {
   const merged = mergeRegistry(generic, readJson(doc, 'ui-builder-school'));
   const editorText = readJson(doc, 'ui-builder-editor-text');
   if (editorText) merged.text = { ...merged.text, editor: deepMerge(merged.text.editor || {}, editorText) };
+  // The editor page only: /capstone/ addresses the site already has (export.js capstone files).
+  const taken = readJson(doc, 'ui-builder-capstone-urls');
+  merged.capstone_urls = Array.isArray(taken) ? taken.filter((url) => typeof url === 'string') : [];
   const titles = {};
   for (const course of readJson(doc, 'ui-builder-courses') || []) {
     if (course && typeof course.code === 'string') titles[course.code] = course.title;

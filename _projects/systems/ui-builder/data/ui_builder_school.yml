@@ -540,8 +540,58 @@ section_presets:
             - type: message_me
               settings: { label: Message us, note: "Questions about {project}?" }
 
-# The words a preset's {placeholders} become when the page doesn't say them yet.
+# "What are you making?": each kind is the sections its page should have, in order. badge fills
+# {kind_badge}; export picks the page file Export offers (capstone: _posts/capstone/).
+page_kinds:
+  - key: capstone
+    label: Capstone page
+    help: Your client, the problem, features, board, team and evidence. The page every capstone team writes.
+    icon: fa-mountain-sun
+    badge: Capstone
+    export: capstone
+    sections: [project_header, client_story, problem_product, core_features, system_flow, project_board, team_roles, sprint_roadmap, testing_evidence, mentor_reviews]
+  - key: natm
+    label: N@tM booth
+    help: What a visitor sees at Night at the Museum, with the demo, what to try and who to talk to.
+    icon: fa-star
+    badge: Night at the Museum
+    export: page
+    sections: [project_header, demo_video, natm_try_it, core_features, team_roles, project_board, visitor_feedback]
+  - key: csp
+    label: CSP team project
+    help: A CSP project's purpose, its flow, the board and the program checklist.
+    icon: fa-laptop-code
+    badge: CSP project
+    export: page
+    sections: [project_header, problem_product, system_flow, project_board, team_roles, csp_evidence]
+  - key: sprint
+    label: Sprint review
+    help: What the team planned, shipped and learned this sprint, with the board as proof.
+    icon: fa-flag-checkered
+    badge: Sprint review
+    export: page
+    sections: [project_header, sprint_roadmap, project_board, testing_evidence, team_roles]
+
+# The quick form on "What are you making?". people rows become the Team block: name and role, and
+# the GitHub username becomes the person's link.
 blueprint:
+  fields:
+    - { id: project, type: text, label: Project name, required: true, max: 120 }
+    - { id: team, type: text, label: Team name, max: 120, help: Shown as Made by. }
+    - { id: client, type: text, label: Client or non-profit, max: 80, help: Leave it empty if there is none. }
+    - { id: mission, type: textarea, label: "What it does, and for whom", max: 300, help: One sentence. It's the page's intro and its gallery description. }
+    - { id: course, type: course, label: Course }
+    - { id: repo, type: url, label: Repository link, placeholder: "https://github.com/your-org/your-repo" }
+    - { id: board, type: url, label: Project board link, help: "A GitHub organization Projects board, or https://github.com/owner/repo/issues." }
+    - { id: site, type: url, label: Deployed site }
+    - id: people
+      type: items
+      label: Team
+      max_items: 8
+      item_fields:
+        - { id: name, type: text, label: First name, required: true, max: 40 }
+        - { id: role, type: text, label: Role, max: 40, placeholder: Scrum master }
+        - { id: github, type: text, label: GitHub username, max: 39 }
   fallbacks:
     project: Our project
     team: ""
