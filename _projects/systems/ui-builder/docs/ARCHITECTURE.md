@@ -140,7 +140,10 @@ are unchanged.
 
 ```mermaid
 flowchart LR
+  Kinds["page_kinds (school pack)"] -->|"sections in order"| Blueprint["blueprint.js"]
+  Form["Quick form (editor-make.js)"] -->|"answers"| Blueprint
   Presets["section_presets (school pack)"] -->|"fill placeholders"| Fill["section-presets.js"]
+  Blueprint --> Fill
   Fill -->|"raw sections"| Model["page-model insertSections / normalizePage"]
   Library["Section library (editor-sections.js)"] -->|"one preset"| Fill
   Canvas["Canvas pills and toolbars"] -->|"addSection / sectionAction"| Library
@@ -171,6 +174,23 @@ flowchart LR
   the repository and site from links, people from a Team block). Sections the page can't take
   stay listed, disabled, with the reason (`presetReason`). `page-model.js` `insertSections` adds
   the chosen one with fresh ids.
+- **"What are you making?"** is the start screen's second tab. The school pack's `page_kinds`
+  (Capstone page, N@tM booth, CSP team project, Sprint review) each list the presets their page
+  should have, in order. The quick form (`blueprint.fields`: project, team, client, mission,
+  course, repo, board, site, people) is drawn with the inspector's own field widgets.
+  `blueprint.js` `blueprintPage` turns a kind and the answers into a raw page; `editor-app.js`
+  passes it through `normalizePage` and `createFrom` like a template. A section this site can't
+  run (a Spring block on a Flask-only site) is left out.
+- **Capstone page file.** More → Export capstone page file writes
+  `_posts/capstone/<school_year>/YYYY-MM-DD-<slug>.md` (a school year starts in August, as the
+  Capstone README says) with the post layout, a `/capstone/<slug>/` permalink, `microblog: true`
+  and `toc: false`, the way the 2026-27 capstone pages are written. The editor page lists the
+  `/capstone/` addresses the site already has (`#ui-builder-capstone-urls`), and a taken one gets
+  the school year, then a number, added. A page whose course is CSA, CSP, CSH or CSSE also
+  declares `capstone_project` (course, school year, picture, the shown Team block's names other
+  than the sample rows, repository and site links), so the `/capstone/` catalog lists it; any
+  other page gets a top-level `school_year` only. It is offered when a page kind has
+  `export: capstone`.
 
 ## Rendering and safety
 
@@ -486,6 +506,7 @@ such as `bad_url`). For example, Spring's `bad_path` is the editor's `bad_api_pa
 - A new test file: add it to `tests/ui_builder.test.mjs` too.
 - A new frame setting (like `style`): `all-blocks.json` gains it once normalized, so Spring's
   byte-for-byte copy of that fixture needs the same edit.
-- A new section preset: the school pack only. `tests/section-library.test.mjs` fills and checks
-  every preset (a placeholder it doesn't know stays in the text, so the test looks for leftovers).
+- A new section preset or page kind: the school pack only. `tests/section-library.test.mjs` fills
+  and checks every preset (a placeholder it doesn't know stays in the text, so the test looks for
+  leftovers), and `tests/blueprint.test.mjs` builds the page kinds.
 - AGENTS.md and AGENTS_MD_DOCUMENTATION.md together when these rules change.

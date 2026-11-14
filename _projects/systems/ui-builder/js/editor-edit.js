@@ -172,6 +172,7 @@ export class EditSession {
       });
     });
     const menu = {
+      export_capstone: () => this.exportCapstone(),
       export_page: () => this.exportFile(),
       export_json: () => this.app.dialogs.textExport({ title: say('json_title'), help: say('json_help'), content: pageToJSON(this.page), filename: `${this.fileName()}.json`, mime: 'application/json' }),
       show_html: () => this.showHtml(this.state.selectedId),

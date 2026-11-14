@@ -10,6 +10,7 @@ import { defOf, liveTypes, textOf } from './registry.js';
 import { renderBlock, renderPage, renderSection } from './render.js';
 import { contentRenderers, lineOf, ownValue } from './blocks-content.js';
 import { slugIssue, suggestSlug } from './url-rules.js';
+import { answersFromPage } from './section-presets.js';
 import { comment, h, liquid, toHTML } from './vnode.js';
 
 const isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -131,13 +132,19 @@ function serialize(vnode, ctx) {
 
 /* ---------- page file ---------- */
 
-// The page file: layout, title, description and a /student-pages/ permalink (the published slug,
-// else one made from the title), then the page's markup. Hidden sections and blocks are left out.
-export function pageToMarkdown(page, ctx) {
-  const c = exportContext(ctx);
+// The title and slug both page files use: the published slug, else one made from the title.
+function fileFacts(page, c) {
   const settings = isObject(ownValue(page, 'page')) ? page.page : {};
   const title = frontMatterText(lineOf(settings, 'title')) || textOf(c.registry, 'blocks.untitled');
   const slug = typeof c.slug === 'string' && slugIssue(c.slug, c.registry) === null ? c.slug : suggestSlug(title);
+  return { settings, title, slug };
+}
+
+// The page file: layout, title, description and a /student-pages/ permalink, then the page's
+// markup. Hidden sections and blocks are left out.
+export function pageToMarkdown(page, ctx) {
+  const c = exportContext(ctx);
+  const { settings, title, slug } = fileFacts(page, c);
   const note = frontMatterText(textOf(c.registry, 'editor.export_permalink_note'));
   const frontMatter = [
     '---',
@@ -148,6 +155,117 @@ export function pageToMarkdown(page, ctx) {
     '---',
   ];
   return `${frontMatter.join('\n')}\n${serialize(renderPage(page, c), c)}\n`;
+}
+
+// The capstone page file (Studio): where a capstone page lives in the repository, as the capstone
+// system's README says: _posts/capstone/<school_year>/YYYY-MM-DD-<slug>.md, with the post layout,
+// a /capstone/<slug>/ permalink, the page's microblog and no table of contents. A page with a
+// course the Capstone catalog knows declares capstone_project (course, school year, team, links,
+// picture), so /capstone/ lists it; any other page is a supporting post with a top-level
+// school_year. Same markup and escaping as the page file; the kanban block is the site's
+// ocs_kanban_board include.
+const CATALOG_COURSES = new Set(['CSA', 'CSP', 'CSH', 'CSSE']);
+// The catalog's link kinds take only http(s) addresses (capstone.rb links).
+const HTTP_URL = /^https?:\/\/\S+$/i;
+const TEAM_MAX = 12;
+
+const validDate = (date) => (date instanceof Date && !Number.isNaN(date.getTime()) ? date : new Date(0));
+
+// The school year a day falls in; a year starts in August (2026-08-01 is in "2026-2027").
+export function schoolYearOf(date = new Date()) {
+  const day = validDate(date);
+  const start = day.getMonth() >= 7 ? day.getFullYear() : day.getFullYear() - 1;
+  return `${start}-${start + 1}`;
+}
+
+// The page's /capstone/ slug: its own, unless another capstone page already has that address
+// (registry.capstone_urls, from the editor page), then with the school year's start added, then
+// a number. Two posts with one permalink overwrite each other, so the file never reuses one.
+function capstoneSlug(page, c, date) {
+  const { slug } = fileFacts(page, c);
+  const taken = new Set(Array.isArray(c.registry.capstone_urls) ? c.registry.capstone_urls : []);
+  const free = (candidate) => !taken.has(`/capstone/${candidate}/`);
+  if (free(slug)) return { slug, wanted: slug };
+  const dated = `${slug}-${schoolYearOf(date).slice(0, 4)}`;
+  let candidate = dated;
+  for (let n = 2; !free(candidate); n += 1) candidate = `${dated}-${n}`;
+  return { slug: candidate, wanted: slug };
+}
+
+// Whether the Capstone catalog (/capstone/) lists the file: the page's course is one it knows.
+export function capstoneListed(page) {
+  const settings = isObject(ownValue(page, 'page')) ? page.page : {};
+  return CATALOG_COURSES.has(typeof settings.course === 'string' ? settings.course.trim().toUpperCase() : '');
+}
+
+export function capstonePostPath(page, ctx, date = new Date()) {
+  const c = exportContext(ctx);
+  const { slug } = capstoneSlug(page, c, validDate(date));
+  const day = validDate(date);
+  const ymd = [day.getFullYear(), day.getMonth() + 1, day.getDate()].map((n, i) => String(n).padStart(i ? 2 : 4, '0')).join('-');
+  return `_posts/capstone/${schoolYearOf(day)}/${ymd}-${slug}.md`;
+}
+
+// What the catalog card shows, read from the shown sections only (hidden ones aren't exported):
+// the first Team block's names (not the sample rows a Team section starts with), the repository
+// and site links, and the page's picture.
+function catalogFacts(page, settings, registry) {
+  const fallbacks = isObject(registry.blueprint) && isObject(registry.blueprint.fallbacks) ? registry.blueprint.fallbacks : {};
+  const samples = new Set((Array.isArray(fallbacks.people) ? fallbacks.people : []).filter(isObject).map((person) => person.name));
+  const blocks = (Array.isArray(page.sections) ? page.sections : []).filter((s) => isObject(s) && s.hidden !== true)
+    .flatMap((s) => (Array.isArray(s.cells) ? s.cells : []).flatMap((cell) => (isObject(cell) && Array.isArray(cell.blocks) ? cell.blocks : [])))
+    .filter((block) => isObject(block) && block.hidden !== true);
+  const answers = answersFromPage({ page: settings, sections: [{ cells: [{ blocks }] }] });
+  const team = answers.people.map((person) => frontMatterText(person.name)).filter((name) => name && !samples.has(name)).slice(0, TEAM_MAX);
+  const links = [['repository', answers.repo], ['demo', answers.site]].filter(([, url]) => HTTP_URL.test(url));
+  const image = frontMatterText(lineOf(settings, 'image'));
+  return { team, links, image: /^(?:https?:\/\/|\/(?!\/))\S+$/i.test(image) ? image : '' };
+}
+
+export function pageToCapstonePost(page, ctx, date = new Date()) {
+  const c = exportContext(ctx);
+  const { settings, title } = fileFacts(page, c);
+  const { slug } = capstoneSlug(page, c, validDate(date));
+  const year = schoolYearOf(date);
+  const course = typeof settings.course === 'string' ? settings.course.trim().toUpperCase() : '';
+  let listing = [`school_year: ${yamlValue(year)}`];
+  if (capstoneListed(page)) {
+    const { team, links, image } = catalogFacts(page, settings, c.registry);
+    listing = [
+      'capstone_project:',
+      `  course: ${course}`,
+      `  school_year: ${yamlValue(year)}`,
+      ...(image ? [`  image: ${yamlValue(image)}`] : []),
+      ...(team.length ? [`  team: [${team.map(yamlValue).join(', ')}]`] : []),
+      ...(links.length ? ['  links:', ...links.map(([kind, url]) => `    ${kind}: ${yamlValue(url)}`)] : []),
+    ];
+  }
+  const frontMatter = [
+    '---',
+    'layout: post',
+    `title: ${yamlValue(title)}`,
+    `description: ${yamlValue(lineOf(settings, 'description'))}`,
+    `permalink: ${yamlValue(`/capstone/${slug}/`)}`,
+    ...listing,
+    'microblog: true',
+    'toc: false',
+    '---',
+  ];
+  return `${frontMatter.join('\n')}\n${serialize(renderPage(page, c), c)}\n`;
+}
+
+// Everything the Export capstone page file dialog shows: where the file goes, its text, whether
+// the catalog lists it, and the address it wanted when that one was already taken.
+export function capstoneFile(page, ctx, date = new Date()) {
+  const c = exportContext(ctx);
+  const { slug, wanted } = capstoneSlug(page, c, validDate(date));
+  return {
+    path: capstonePostPath(page, ctx, date),
+    content: pageToCapstonePost(page, ctx, date),
+    listed: capstoneListed(page),
+    taken: slug === wanted ? '' : `/capstone/${wanted}/`,
+    permalink: `/capstone/${slug}/`,
+  };
 }
 
 // One block's page-file markup, for the code view (shown even while the block is hidden).

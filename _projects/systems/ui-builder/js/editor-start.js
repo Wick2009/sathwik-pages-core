@@ -9,6 +9,7 @@ import { toDOM } from './vnode.js';
 import { el, icon } from './editor-fields.js';
 import { formatWhen } from './editor-dialogs.js';
 import { publicStateOf } from './editor-session.js';
+import { createMakePanel } from './editor-make.js';
 
 const listOf = (value) => (Array.isArray(value) ? value : []);
 
@@ -31,11 +32,15 @@ export function refOf(summary, cloud) {
 }
 
 // ids/validators feed importPageJSON; errorText(error) words a store error. actions: open(ref), create(templateKey),
+// build(kindKey, answers) and blank() from "What are you making?" (editor-make.js),
 // importPage({page, errors}), resumeNew(draft), openDraft(ref) and openPublished(summary) → viewer URLs,
 // revisions(ref, summary), approve(ref, summary), unpublish(ref, summary), bulkPublic(course), message(text, {error}).
 export function createStartScreen({ root, doc = globalThis.document, registry, say, text, errorText = () => text('store.unknown'), store, draftStore, signedIn, baseurl, pageOrigin, renderRich, ids, validators, actions, editorUrl }) {
   const caps = store.capabilities || {};
   const tabs = [{ key: 'mine', label: say('tab_mine') }];
+  // "What are you making?" comes only with page kinds to make (the school pack has them).
+  const makes = Array.isArray(registry.page_kinds) && registry.page_kinds.length > 0;
+  if (makes) tabs.push({ key: 'make', label: say('tab_make') });
   if (caps.teacher) tabs.push({ key: 'class', label: text('teacher.class_pages') });
   tabs.push({ key: 'templates', label: say('tab_templates') });
   const panels = {};
@@ -83,7 +88,7 @@ export function createStartScreen({ root, doc = globalThis.document, registry, s
   }
   panels.mine.append(notes,
     el(doc, 'div', { class: 'ocs__links' },
-      el(doc, 'button', { type: 'button', class: 'ocs__btn ocs__btn--icon accent fill', onclick: () => select('templates', { focus: true }) }, icon(doc, 'fa-plus'), say('new_page')),
+      el(doc, 'button', { type: 'button', class: 'ocs__btn ocs__btn--icon accent fill', onclick: () => select(makes ? 'make' : 'templates', { focus: true }) }, icon(doc, 'fa-plus'), say('new_page')),
       el(doc, 'button', { type: 'button', class: 'ocs__btn ocs__btn--icon', onclick: () => file.click() }, icon(doc, 'fa-file-import'), say('import_json')), file),
     mineStatus, mineList);
 
@@ -147,6 +152,16 @@ export function createStartScreen({ root, doc = globalThis.document, registry, s
       mineStatus.textContent = say('list_failed', { message: errorText(error) });
       mineList.replaceChildren(el(doc, 'button', { type: 'button', class: 'ocs__btn small', onclick: () => { mineLoading = null; loadMine(); } }, say('retry')));
     }).finally(() => { mineLoading = null; });
+  }
+
+  // ---- What are you making?
+  if (makes) {
+    const make = createMakePanel({ doc, registry, say, text, actions: {
+      build: (kind, answers) => actions.build(kind, answers),
+      blank: () => actions.create('blank'),
+      message: (words, options) => actions.message(words, options),
+    } });
+    panels.make.append(make.element);
   }
 
   // ---- Templates: each page drawn at 960px, scaled to its card's width.
