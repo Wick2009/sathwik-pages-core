@@ -29,3 +29,4 @@ import '../_projects/systems/ui-builder/tests/page-store.test.mjs';
 import '../_projects/systems/ui-builder/tests/spring-page-store.test.mjs';
 import '../_projects/systems/ui-builder/tests/viewer.test.mjs';
 import '../_projects/systems/ui-builder/tests/section-style.test.mjs';
+import '../_projects/systems/ui-builder/tests/section-library.test.mjs';

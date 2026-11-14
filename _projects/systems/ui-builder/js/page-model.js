@@ -305,6 +305,23 @@ export function addSection(page, registry, { type = 'stack', index, layout, ids,
   return { ...page, sections: insertAt(sections, clampIndex(index, sections.length), section) };
 }
 
+// Whole raw sections (a library preset, already filled by section-presets.js) at `index`
+// (default: the end), checked like a loaded page and each part given a fresh id that is free on
+// this page. → {page, ids: the new section ids}; nothing to add returns the same page.
+export function insertSections(page, registry, { sections, index, ids } = {}) {
+  requireIds(ids);
+  const built = listOf(sections).map((section) => buildSection(section, registry)).filter(Boolean);
+  if (!built.length) return { page, ids: [] };
+  const used = collectIds(page);
+  for (const section of built) {
+    section.id = freshId('s', ids, used);
+    for (const cell of section.cells) for (const block of cell.blocks) block.id = freshId('b', ids, used);
+  }
+  const list = sectionsOf(page);
+  const at = clampIndex(index, list.length);
+  return { page: { ...page, sections: [...list.slice(0, at), ...built, ...list.slice(at)] }, ids: built.map((section) => section.id) };
+}
+
 // A block with its defaults (and any `settings` given) at `index` (default: the end) of a cell.
 export function addBlock(page, registry, { type, sectionId, cellIndex = 0, index, settings, ids, newId } = {}) {
   const def = defOf(registry, 'block', type);

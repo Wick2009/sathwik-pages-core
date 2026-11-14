@@ -40,7 +40,7 @@ the backend routes and the tests.
 | Source | Published to | What it is |
 |---|---|---|
 | `data/ui_builder.yml` | `_data/ui_builder.yml` | the registry: blocks, fields, limits, templates, every string |
-| `data/ui_builder_school.yml` | `_data/ui_builder_school.yml` | the school pack: courses, announcements and calendar blocks, CSP templates |
+| `data/ui_builder_school.yml` | `_data/ui_builder_school.yml` | the school pack: courses, announcements and calendar blocks, CSP templates, and the Studio's section presets |
 | `data/ui_builder_editor.yml` | `_data/ui_builder_editor.yml` | the editor's strings |
 | `pages/*.md` | `navigation/ui-builder/` | the editor, canvas, viewer and gallery pages |
 | `layouts/ui-builder-canvas.html` | `_layouts/` | the canvas frame: the site's styles and theme, nothing else from the site head |
@@ -53,7 +53,8 @@ The modules, by job:
 
 | Modules | Job |
 |---|---|
-| `editor-*.js` | the editor at `/ui-builder/`. `editor-app.js` starts it and opens the start screen or a page; the others are the start screen, the editing shell, the outline, the inspector and its fields, the block menu, the dialogs, the shortcuts and saving |
+| `editor-*.js` | the editor at `/ui-builder/`. `editor-app.js` starts it and opens the start screen or a page; the others are the start screen, the editing shell, the outline, the inspector and its fields, the block menu, the section library (`editor-sections.js`), the dialogs, the shortcuts and saving |
+| `section-presets.js` | the section library's pure parts: its groups, and filling a preset's placeholders from what the page already says |
 | `canvas.js`, `canvas-bridge.js` | the preview inside the editor: the page drawn in its iframe, and the editor's side of the connection |
 | `editor-code.js`, `pretty-html.js` | the code view in the preview's place: the page-file HTML block by block, indented and colored like lesson code, with what each block's markup does and the `ocs__` classes it uses |
 | `page-store.js`, `spring-page-store.js`, `draft-store.js` | the stores: pages kept in this browser or in Spring, and the crash copy of the page being edited |

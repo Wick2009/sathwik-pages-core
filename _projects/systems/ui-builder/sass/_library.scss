@@ -1,0 +1,81 @@
+// The section library (editor-sections.js): an ocs__modal with the categories down the left and
+// the sections as ocs__hub-cards on the right. The grammar has the card and the grid; the
+// two-pane dialog and the shorter section thumbnails are the builder's own.
+
+$uib-library-nav: 12rem;
+$uib-library-thumb: 8.5rem;
+
+.ui-builder-dialog .ui-builder-library-card {
+  width: 100%;
+  max-width: 64rem;
+}
+
+.ui-builder-library {
+  display: grid;
+  grid-template-columns: $uib-library-nav minmax(0, 1fr);
+  gap: 1rem;
+  min-height: 0;
+}
+
+%uib-library-scroll {
+  max-height: 60dvh;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.ui-builder-library-nav {
+  @extend %uib-library-scroll;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+
+  .ocs__btn {
+    justify-content: flex-start;
+    text-align: left;
+  }
+}
+
+.ui-builder-library-grid {
+  @extend %uib-library-scroll;
+  align-content: start;
+  padding: 0.25rem;
+
+  .ocs__hub-card {
+    cursor: pointer;
+  }
+
+  .ocs__hub-card[aria-disabled] {
+    cursor: default;
+  }
+}
+
+.ui-builder-thumb--section,
+.ui-builder-library-blank {
+  height: $uib-library-thumb;
+}
+
+// A blank section has nothing to draw: its frame's icon in a dashed box.
+.ui-builder-library-blank {
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--ui-border);
+  border-radius: 0.6rem;
+  color: var(--pref-text-color);
+  font-size: 1.75rem;
+}
+
+@media (max-width: $uib-phone) {
+  .ui-builder-library {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ui-builder-library-nav {
+    flex-direction: row;
+    max-height: none;
+    overflow-x: auto;
+
+    .ocs__btn {
+      flex: none;
+    }
+  }
+}
