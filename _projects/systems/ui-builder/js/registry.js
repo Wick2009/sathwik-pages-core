@@ -41,16 +41,48 @@ function deepMerge(base, extra) {
   return out;
 }
 
-// Blocks and text deep-merge (the school pack wins); templates and page fields are appended.
+// Blocks, text and the blueprint deep-merge (the school pack wins); templates, page fields and the
+// section library (categories and presets) are appended.
 export function mergeRegistry(generic, school) {
   if (!isObject(school)) return generic;
   return {
     ...generic,
     blocks: deepMerge(generic.blocks || {}, school.blocks || {}),
     text: deepMerge(generic.text || {}, school.text || {}),
+    blueprint: deepMerge(generic.blueprint || {}, school.blueprint || {}),
     templates: [...(generic.templates || []), ...(school.templates || [])],
     page_fields: [...(generic.page_fields || []), ...(school.page_fields || [])],
     course_codes: [...(generic.course_codes || []), ...(school.course_codes || [])],
+    section_categories: [...(generic.section_categories || []), ...(school.section_categories || [])],
+    section_presets: [...(generic.section_presets || []), ...(school.section_presets || [])],
+  };
+}
+
+// The Studio data: the section library (every preset in a known category, with one section, no
+// key listed twice). blueprint.fallbacks are the words an empty placeholder becomes.
+function checkStudio(raw) {
+  const categories = Array.isArray(raw.section_categories) ? raw.section_categories : [];
+  const categoryKeys = new Set();
+  for (const category of categories) {
+    if (!isObject(category) || typeof category.key !== 'string' || !category.key) fail('a section category has no key');
+    if (categoryKeys.has(category.key)) fail(`section category ${category.key} is listed twice`);
+    categoryKeys.add(category.key);
+  }
+  const presets = Array.isArray(raw.section_presets) ? raw.section_presets : [];
+  const presetKeys = new Set();
+  for (const preset of presets) {
+    if (!isObject(preset) || typeof preset.key !== 'string' || !preset.key) fail('a section preset has no key');
+    if (presetKeys.has(preset.key)) fail(`section preset ${preset.key} is listed twice`);
+    presetKeys.add(preset.key);
+    if (!categoryKeys.has(preset.category)) fail(`section preset ${preset.key} has unknown category ${preset.category}`);
+    if (!isObject(preset.section) || typeof preset.section.type !== 'string') fail(`section preset ${preset.key} needs a section with a type`);
+  }
+  const blueprint = isObject(raw.blueprint) ? raw.blueprint : {};
+  const fallbacks = isObject(blueprint.fallbacks) ? blueprint.fallbacks : {};
+  return {
+    section_categories: categories,
+    section_presets: presets,
+    blueprint: { fallbacks },
   };
 }
 
@@ -72,6 +104,7 @@ export function normalizeRegistry(raw, { courseTitles = {} } = {}) {
   const codes = Array.isArray(raw.course_codes) ? raw.course_codes : [];
   return {
     ...raw,
+    ...checkStudio(raw),
     categories,
     devices: Array.isArray(raw.devices) ? raw.devices : [],
     templates: Array.isArray(raw.templates) ? raw.templates : [],

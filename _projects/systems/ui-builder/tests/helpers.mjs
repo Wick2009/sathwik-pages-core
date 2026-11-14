@@ -31,3 +31,11 @@ export function counterIds() {
   let n = 0;
   return (kind) => `${kind}-${String(++n).padStart(6, '0')}`;
 }
+
+// A team's quick-form answers for the Studio tests: an escaped client name, people with and
+// without names or real GitHub usernames, and an empty row.
+export const SAMPLE_ANSWERS = {
+  project: 'Pantry Pal', team: 'Byte Bakers', client: 'Harbor <Food> & Pantry', mission: 'Families see what the pantry has today.',
+  course: 'csp', repo: 'https://github.com/example-team/pantry-pal', board: 'https://github.com/orgs/example-team/projects/1', site: '',
+  people: [{ name: 'Ava', role: 'Scrum master', github: 'ava-codes' }, { name: '', role: 'Backend', github: 'leo-dev' }, { name: 'Mia', role: '', github: 'not a user!' }, { name: '', role: '', github: '' }],
+};

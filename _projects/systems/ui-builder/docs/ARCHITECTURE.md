@@ -138,6 +138,15 @@ class makes (capstone pages, N@tM booths, sprint reviews). Everything it makes i
 page of existing blocks, so the page model's rules, the renderer's safety, the stores and Spring
 are unchanged.
 
+```mermaid
+flowchart LR
+  Presets["section_presets (school pack)"] -->|"fill placeholders"| Fill["section-presets.js"]
+  Fill -->|"raw sections"| Model["page-model insertSections / normalizePage"]
+  Library["Section library (editor-sections.js)"] -->|"one preset"| Fill
+  Canvas["Canvas pills and toolbars"] -->|"addSection / sectionAction"| Library
+  Model --> Doc["Page document"]
+```
+
 - **Section style.** Both frames have a `style` field (Plain, Card, Tinted, Accent outline).
   `render.js` adds the grammar's `ocs__band ocs__band--<style>` for any style the frame's field
   lists. The band element (`_sass/open-coding/elements/bands`) mixes its colors from theme
@@ -150,6 +159,18 @@ are unchanged.
   `canvas-bridge.js`, which drops anything but the five actions. The outline and settings panes
   are panels over the canvas, closed until asked for; the settings panel opens when something is
   picked and closes on **Done** or Escape.
+- **Section presets** (`section_presets`, grouped by `section_categories`) are one section each,
+  written with `{placeholders}`. `section-presets.js` `presetSection` fills them by each field's
+  type: rich text is escaped, a table answer stays in one cell, a button whose link was left
+  empty is dropped, and a list written `"{people}"` becomes the Team block (name, role, and the
+  GitHub profile when the username is a real one, or sample rows when no one is listed). Empty
+  answers use `blueprint.fallbacks`.
+- **The section library** (`editor-sections.js`) is what Add section opens: Blank (the frames),
+  then each category, each section drawn small with the real renderer and filled with what the
+  page already says (`answersFromPage`: the title, byline, course, the board from a Kanban block,
+  the repository and site from links, people from a Team block). Sections the page can't take
+  stay listed, disabled, with the reason (`presetReason`). `page-model.js` `insertSections` adds
+  the chosen one with fresh ids.
 
 ## Rendering and safety
 
@@ -465,4 +486,6 @@ such as `bad_url`). For example, Spring's `bad_path` is the editor's `bad_api_pa
 - A new test file: add it to `tests/ui_builder.test.mjs` too.
 - A new frame setting (like `style`): `all-blocks.json` gains it once normalized, so Spring's
   byte-for-byte copy of that fixture needs the same edit.
+- A new section preset: the school pack only. `tests/section-library.test.mjs` fills and checks
+  every preset (a placeholder it doesn't know stays in the text, so the test looks for leftovers).
 - AGENTS.md and AGENTS_MD_DOCUMENTATION.md together when these rules change.

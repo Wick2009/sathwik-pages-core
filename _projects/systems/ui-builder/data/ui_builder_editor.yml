@@ -320,7 +320,13 @@ col_status: Status
 col_updated: Updated
 col_actions: Actions
 # ---- Studio (plans/2026-11-13-ui-builder-studio.md)
-# The canvas's section chrome (canvas.js)
+# The section library (editor-sections.js) and the canvas's section chrome (canvas.js)
+library_title: Add a section
+library_lead: Sections made for OCS pages. Each one comes filled with what this page already says.
+library_categories: Section categories
+library_blank: Blank
+library_add: "Add {label}"
+library_add_short: Add
 canvas_add_section: Add section
 canvas_edit_section: Edit
 canvas_section_tools: "Section {n}"

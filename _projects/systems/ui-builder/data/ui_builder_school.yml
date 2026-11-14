@@ -153,6 +153,407 @@ templates:
                 - type: feedback
                   settings: { title: Feedback, prompt: Would this help you? }
 
+# ---- Studio: what OCS students actually make ----
+# The section library (Add section) and "What are you making?" both build from these. A preset is
+# one ordinary section of existing blocks, so Spring and the renderer need nothing new. Values may
+# hold {placeholders} that the blueprint fills from the quick form (js/blueprint.js): {project},
+# {team}, {client}, {mission}, {course_label}, {kind_badge}, {repo}, {board}, {site}; a list value
+# written as "{people}" becomes the team. An empty answer uses blueprint.fallbacks, and a button
+# whose link is an empty answer is left out. Sprint dates are the 2026-27 school calendar's.
+section_categories:
+  - { key: intro, label: Intro }
+  - { key: client, label: Our client }
+  - { key: problem, label: Problem and product }
+  - { key: features, label: Features }
+  - { key: flow, label: How it works }
+  - { key: plan, label: Board and plan }
+  - { key: team, label: Team }
+  - { key: evidence, label: Evidence }
+  - { key: showcase, label: Showcase }
+  - { key: contact, label: Links and contact }
+
+section_presets:
+  - key: project_header
+    category: intro
+    label: Project header
+    help: The project, the client's mission and the three buttons every page needs.
+    icon: fa-flag
+    section:
+      type: stack
+      settings: { style: tint }
+      cells:
+        - blocks:
+            - type: hero
+              settings:
+                badge: "{course_label} · {kind_badge}"
+                title: "{project}"
+                lead: "{mission}"
+                links:
+                  - { label: Try it, url: "{site}" }
+                  - { label: Source code, url: "{repo}" }
+                  - { label: Project board, url: "{board}" }
+  - key: header_video
+    category: intro
+    label: Header with demo video
+    help: The project header, then a two-minute demo video under it.
+    icon: fa-circle-play
+    section:
+      type: stack
+      settings: { style: plain }
+      cells:
+        - blocks:
+            - type: hero
+              settings: { badge: "{course_label} · {kind_badge}", title: "{project}", lead: "{mission}", links: [{ label: Try it, url: "{site}" }] }
+            - type: video
+              settings: { url: "", title: Demo video, caption: "The problem, the demo and what's next, in two minutes." }
+  - key: client_story
+    category: client
+    label: Our client
+    help: Who the non-profit is, who they serve, and what they asked you to build.
+    icon: fa-handshake
+    section:
+      type: columns
+      settings: { layout: halves, style: plain }
+      cells:
+        - blocks:
+            - type: heading
+              settings: { text: "The story of {client}", level: "2", subtitle: "" }
+            - type: text
+              settings: { body: "<p>Who {client} serves, what they do and why it matters. Two or three sentences in your own words.</p>" }
+        - blocks:
+            - type: card
+              settings: { title: What they asked us for, body: "<p>The problem {client} wants help with, in their words. Name your client contact by role, with no personal email.</p>" }
+  - key: client_conversations
+    category: client
+    label: Client conversations
+    help: A log of each meeting with your client and what changed because of it.
+    icon: fa-comments
+    section:
+      type: stack
+      settings: { style: plain }
+      cells:
+        - blocks:
+            - type: heading
+              settings: { text: Client conversations, level: "2", subtitle: "What we asked, what we learned, what we changed." }
+            - type: table
+              settings: { data: "Date | Who we talked to | What we learned | What we changed\nSep 12 | Client lead | Their biggest problem | The first feature we planned", caption: "" }
+  - key: problem_product
+    category: problem
+    label: Problem to product
+    help: The problem in one line, what you're building, and who it helps.
+    icon: fa-lightbulb
+    section:
+      type: stack
+      settings: { style: card }
+      cells:
+        - blocks:
+            - type: heading
+              settings: { text: From problem to product, level: "2", subtitle: "" }
+            - type: keypoints
+              settings:
+                items:
+                  - { title: The problem, text: "Right now, people who rely on {client} have to …" }
+                  - { title: "What we're building", text: "{project} lets them … in one place." }
+                  - { title: Who it helps, text: "The people who use it and what changes for them." }
+  - key: user_stories
+    category: problem
+    label: User stories
+    help: Each feature as a user story, ticked off as it ships.
+    icon: fa-user-check
+    section:
+      type: stack
+      settings: { style: plain }
+      cells:
+        - blocks:
+            - type: heading
+              settings: { text: User stories, level: "2", subtitle: "" }
+            - type: checklist
+              settings:
+                items:
+                  - { text: "As a visitor, I want to … so that …", done: false }
+                  - { text: "As a volunteer, I want to … so that …", done: false }
+                  - { text: "As the client, I want to … so that …", done: false }
+  - key: core_features
+    category: features
+    label: Core features
+    help: Three to six features, one line each.
+    icon: fa-list-check
+    section:
+      type: stack
+      settings: { style: plain }
+      cells:
+        - blocks:
+            - type: heading
+              settings: { text: Core features, level: "2", subtitle: "" }
+            - type: keypoints
+              settings:
+                items:
+                  - { title: Feature one, text: What it does and who it helps. }
+                  - { title: Feature two, text: What it does and who it helps. }
+                  - { title: Feature three, text: What it does and who it helps. }
+  - key: feature_cards
+    category: features
+    label: Features to try
+    help: Link cards that open each feature in your deployed site.
+    icon: fa-grip
+    section:
+      type: stack
+      settings: { style: plain }
+      cells:
+        - blocks:
+            - type: heading
+              settings: { text: Try the features, level: "2", subtitle: "" }
+            - type: link_cards
+              settings:
+                items:
+                  - { kicker: Feature, title: Feature one, text: What to click first., url: "{site}" }
+                  - { kicker: Feature, title: Feature two, text: What to click first., url: "{site}" }
+  - key: system_flow
+    category: flow
+    label: System flow
+    help: Frontend, API and database in one table, the way a reviewer reads it.
+    icon: fa-diagram-project
+    section:
+      type: stack
+      settings: { style: plain }
+      cells:
+        - blocks:
+            - type: heading
+              settings: { text: How it works, level: "2", subtitle: "From the page a visitor opens to where the data lives." }
+            - type: table
+              settings: { data: "Part | Built with | What it does\nFrontend | GitHub Pages (Jekyll) | The page a visitor opens\nBackend | Flask or Spring API | Checks each request and runs the rules\nDatabase | SQLite, MySQL when deployed | Stores what {project} needs", caption: "" }
+  - key: tech_stack
+    category: flow
+    label: Tech stack
+    help: Three cards for the frontend, the backend and how it's deployed.
+    icon: fa-layer-group
+    section:
+      type: columns
+      settings: { layout: thirds, style: plain }
+      cells:
+        - blocks:
+            - type: card
+              settings: { title: Frontend, body: "<p>GitHub Pages, Jekyll and the OCS components.</p>" }
+        - blocks:
+            - type: card
+              settings: { title: Backend, body: "<p>Flask or Spring: the API and its rules.</p>" }
+        - blocks:
+            - type: card
+              settings: { title: Deployment, body: "<p>Where it runs and how the team ships a change.</p>" }
+  - key: project_board
+    category: plan
+    label: Project board
+    help: Your GitHub board, live. Reviewers look at it first.
+    icon: fa-clipboard-list
+    section:
+      type: stack
+      settings: { style: card }
+      cells:
+        - blocks:
+            - type: heading
+              settings: { text: Project board, level: "2", subtitle: "Our issues and who is on each, live from GitHub." }
+            - type: kanban
+              settings: { url: "{board}", filter: "", title: "" }
+  - key: sprint_roadmap
+    category: plan
+    label: Roadmap by sprint
+    help: What each sprint is for, with this year's school calendar dates.
+    icon: fa-road
+    section:
+      type: stack
+      settings: { style: plain }
+      cells:
+        - blocks:
+            - type: heading
+              settings: { text: Roadmap, level: "2", subtitle: "" }
+            - type: table
+              settings: { data: "Sprint | Dates | Goal | Status\nSprint 3 | Oct 12 – Nov 6 | Client interview, first prototype, board set up | Done\nSprint 4 | Nov 9 – Dec 11 | Core features working end to end | In progress\nSprint 5 | Dec 14 – Jan 22 | Testing with the client and the N@tM demo | Next", caption: "" }
+  - key: board_calendar
+    category: plan
+    label: Board and class calendar
+    help: The board beside the class calendar, so deadlines and work sit together.
+    icon: fa-calendar-days
+    section:
+      type: columns
+      settings: { layout: sidebar_right, style: plain }
+      cells:
+        - blocks:
+            - type: kanban
+              settings: { url: "{board}", filter: "", title: Project board }
+        - blocks:
+            - type: calendar
+              settings: { course: "", title: Class calendar }
+  - key: team_roles
+    category: team
+    label: Team and roles
+    help: Everyone on the team and their role. First names only on public pages.
+    icon: fa-people-group
+    section:
+      type: stack
+      settings: { style: plain }
+      cells:
+        - blocks:
+            - type: team
+              settings: { title: Our team, items: "{people}" }
+  - key: team_contact
+    category: team
+    label: Team and Message us
+    help: The team, with a button that opens a message to you.
+    icon: fa-envelope
+    section:
+      type: columns
+      settings: { layout: sidebar_right, style: plain }
+      cells:
+        - blocks:
+            - type: team
+              settings: { title: Our team, items: "{people}" }
+        - blocks:
+            - type: message_me
+              settings: { label: Message us, note: "Questions about {project}?" }
+  - key: testing_evidence
+    category: evidence
+    label: Testing and reviews
+    help: Acceptance tests, mentor reviews and client feedback as a checklist.
+    icon: fa-square-check
+    section:
+      type: stack
+      settings: { style: card }
+      cells:
+        - blocks:
+            - type: heading
+              settings: { text: Testing and reviews, level: "2", subtitle: "" }
+            - type: checklist
+              settings:
+                items:
+                  - { text: "Each feature's issue lists its acceptance tests", done: false }
+                  - { text: "The tests run and pass, with the run linked in the issue", done: false }
+                  - { text: "Mentor review 1 done, notes on the board", done: false }
+                  - { text: Mentor review 2 done, done: false }
+                  - { text: The client tried the demo and gave feedback, done: false }
+  - key: mentor_reviews
+    category: evidence
+    label: Mentor reviews
+    help: What each mentor said and the change it led to.
+    icon: fa-user-tie
+    section:
+      type: stack
+      settings: { style: plain }
+      cells:
+        - blocks:
+            - type: heading
+              settings: { text: Mentor reviews, level: "2", subtitle: "" }
+            - type: table
+              settings: { data: "Date | Mentor | What they said | What we changed\nOct 20 | Mentor's name | Their main point | The change and its issue number", caption: "" }
+  - key: csp_evidence
+    category: evidence
+    label: CSP program checklist
+    help: The parts the CSP Create task looks for, ticked off as your code has them.
+    icon: fa-code
+    section:
+      type: stack
+      settings: { style: card }
+      cells:
+        - blocks:
+            - type: heading
+              settings: { text: Program checklist, level: "2", subtitle: "Where each part is in our code. This page shows the project; the code itself is ours." }
+            - type: checklist
+              settings:
+                items:
+                  - { text: Input from the user, done: false }
+                  - { text: A list or other collection that the program uses, done: false }
+                  - { text: A procedure with a parameter, done: false }
+                  - { text: "Sequencing, selection and iteration in that procedure", done: false }
+                  - { text: A call to the procedure, done: false }
+                  - { text: Output that depends on the input, done: false }
+  - key: natm_try_it
+    category: showcase
+    label: Try it at our booth
+    help: The demo link, what to try first, and how to tell the team.
+    icon: fa-person-chalkboard
+    section:
+      type: stack
+      settings: { style: tint }
+      cells:
+        - blocks:
+            - type: heading
+              settings: { text: Try it, level: "2", subtitle: "" }
+            - type: keypoints
+              settings:
+                items:
+                  - { title: Open the demo, text: Use the button below on your phone or at the booth. }
+                  - { title: Try this first, text: The one thing a visitor should do. }
+                  - { title: Tell us, text: Leave feedback at the bottom of this page. }
+            - type: buttons
+              settings: { links: [{ label: Open the demo, url: "{site}" }], emphasize_first: true }
+  - key: demo_video
+    category: showcase
+    label: Demo video
+    help: A YouTube or Google Drive video of the project.
+    icon: fa-film
+    section:
+      type: stack
+      settings: { style: plain }
+      cells:
+        - blocks:
+            - type: video
+              settings: { url: "", title: Demo video, caption: "The problem, the demo and what's next, in two minutes." }
+  - key: visitor_feedback
+    category: showcase
+    label: Visitor feedback
+    help: Visitors leave comments. Guests can use it on showcase night.
+    icon: fa-comment-dots
+    section:
+      type: stack
+      settings: { style: plain }
+      cells:
+        - blocks:
+            - type: feedback
+              settings: { title: Feedback, prompt: "What should {project} do next?" }
+  - key: project_links
+    category: contact
+    label: Project links
+    help: Cards for the repository, the board and the deployed site.
+    icon: fa-link
+    section:
+      type: stack
+      settings: { style: plain }
+      cells:
+        - blocks:
+            - type: heading
+              settings: { text: Links, level: "2", subtitle: "" }
+            - type: link_cards
+              settings:
+                items:
+                  - { kicker: Code, title: Repository, text: Our source code and its history., url: "{repo}" }
+                  - { kicker: Plan, title: Project board, text: Our issues and who is on each., url: "{board}" }
+                  - { kicker: Demo, title: Deployed site, text: Try it yourself., url: "{site}" }
+  - key: message_us
+    category: contact
+    label: Message us
+    help: A button that opens a direct message with your team.
+    icon: fa-paper-plane
+    section:
+      type: stack
+      settings: { style: plain }
+      cells:
+        - blocks:
+            - type: message_me
+              settings: { label: Message us, note: "Questions about {project}?" }
+
+# The words a preset's {placeholders} become when the page doesn't say them yet.
+blueprint:
+  fallbacks:
+    project: Our project
+    team: ""
+    client: our client
+    mission: One sentence about what it does and who it helps.
+    course_label: OCS
+    kind_badge: Project
+    # A Team section added with no people listed gets these rows to replace, not an empty list.
+    people:
+      - { name: Your name, role: What you own }
+      - { name: Teammate, role: What they own }
+
 text:
   blocks:
     sample_announcements: "Announcements for {course} show here on the published page."

@@ -3,9 +3,11 @@
 // publishing, exports, revisions, leases and conflicts. Every change goes through commit():
 // history (typing merges per field), validation, outline, inspector, canvas, then the session.
 import {
-  addBlock, addSection, countLive, duplicateNode, findNode, moveNode, moveNodeTo, removeNode,
+  addBlock, addSection, countLive, duplicateNode, findNode, insertSections, moveNode, moveNodeTo, removeNode,
   setHidden, updatePageSettings, updateSettings, validatePage,
 } from './page-model.js';
+import { answersFromPage, presetOf, presetSection } from './section-presets.js';
+import { createSectionLibrary } from './editor-sections.js';
 import { defOf } from './registry.js';
 import { createHistory } from './history.js';
 import { pageToJSON } from './export.js';
@@ -104,6 +106,7 @@ export class EditSession {
       },
     });
     this.palette = createPalette({ doc, registry: this.registry, say, dialogs });
+    this.library = createSectionLibrary({ doc, registry: this.registry, say, dialogs, baseurl: this.app.baseurl, pageOrigin: this.app.pageOrigin, renderRich: this.app.hooks && this.app.hooks.renderRich });
     this.codeView = createCodeView({ doc, registry: this.registry, say, onSelect: (id) => this.select(id, { from: 'code' }) });
     shell.codePane.append(this.codeView.element);
     this.lease = createLeaseBanner(shell.banners, { doc, say, onTakeOver: () => this.takeOver() });
@@ -529,18 +532,29 @@ export class EditSession {
     this.palette.openBlocks({ capabilities: { spring: this.caps.cloud === true, flask: true }, liveCount: countLive(this.page, this.registry), onPick: (item) => this.addBlockAt(item.type, target) });
   }
 
-  // Add section (the section chooser) at `index`: a canvas pill's place, else after the selected
-  // section, else at the end.
+  // The section library (editor-sections.js) at `index`: a canvas pill's place, else after the
+  // selected section, else at the end. A preset comes in filled with the page's own facts.
   openSections(index) {
     if (this.state.readOnly) return;
     if (this.page.sections.length >= this.limits.sections) { this.notify(this.text('errors.too_many_sections', { max: this.limits.sections }), { error: true }); return; }
-    this.palette.openSections({ onPick: ({ type, layout }) => {
-      const loc = findNode(this.page, this.state.selectedId);
-      const at = Number.isInteger(index) ? index : (loc ? loc.sectionIndex + 1 : this.page.sections.length);
-      const newId = this.app.ids('s');
-      const next = addSection(this.page, this.registry, { type, layout, index: at, newId });
-      if (this.commit(next, { selectedId: newId, announce: this.say('added', { label: nodeLabel(this.registry, next, newId) || type }) })) this.bridge.scrollTo(newId);
-    } });
+    const loc = findNode(this.page, this.state.selectedId);
+    const at = Number.isInteger(index) ? index : (loc ? loc.sectionIndex + 1 : this.page.sections.length);
+    const answers = answersFromPage(this.page);
+    return this.library.open({ capabilities: { spring: this.caps.cloud === true, flask: true }, liveCount: countLive(this.page, this.registry), answers }).then((choice) => {
+      if (!choice || this.closed) return;
+      if (choice.kind === 'frame') {
+        const newId = this.app.ids('s');
+        const next = addSection(this.page, this.registry, { type: choice.type, layout: choice.layout, index: at, newId });
+        this.commit(next, { selectedId: newId, announce: this.say('added', { label: nodeLabel(this.registry, next, newId) || choice.type }) });
+        this.bridge.scrollTo(newId);
+        return;
+      }
+      const preset = presetOf(this.registry, choice.key);
+      const { page: next, ids } = insertSections(this.page, this.registry, { sections: [presetSection(this.registry, choice.key, answers)], index: at, ids: this.app.ids });
+      if (!ids.length) return;
+      if (this.overLiveLimit(next)) { this.notify(this.say('live_limit', { max: this.limits.live_blocks }), { error: true }); return; }
+      if (this.commit(next, { selectedId: ids[0], announce: this.say('added', { label: preset ? preset.label : choice.key }) })) this.bridge.scrollTo(ids[0]);
+    });
   }
 }
 
