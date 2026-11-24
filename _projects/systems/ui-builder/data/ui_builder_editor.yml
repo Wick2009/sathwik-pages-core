@@ -324,4 +324,7 @@ col_actions: Actions
 canvas_add_section: Add section
 canvas_edit_section: Edit
 canvas_section_tools: "Section {n}"
+# The panels over the canvas (editor-shell.js)
+pane_done: Done
+pane_close: "Close {pane}"
 # Store errors are worded by text.store in ui_builder.yml (page-store.js storeErrorText).

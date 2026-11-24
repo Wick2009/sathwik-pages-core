@@ -61,25 +61,29 @@
   white-space: nowrap;
 }
 
-// Outline, canvas and inspector side by side from 1440px; below that the toggles open the
-// side panes beside the canvas, and on a phone everything stacks in reading order.
+// Studio layout: the canvas has the whole width; the outline and settings panes are panels over
+// it (left and right), open only when asked for, as a site builder's editing panels are. On a
+// phone a panel covers the canvas's width. The panes' sizes are the tokens in main.scss.
 .ui-builder-body {
-  display: grid;
-  grid-template-columns: 17rem minmax(0, 1fr) 22rem;
-  align-items: start;
-  gap: 0.75rem;
+  position: relative;
 }
 
 // The panes scroll on their own so the canvas stays in view.
 .ui-builder-pane {
+  position: absolute;
+  top: $uib-pane-gap;
+  z-index: 5;
+  width: $uib-inspector-width;
+  max-width: calc(100% - #{$uib-pane-gap * 2});
+  max-height: calc(100dvh - 11rem);
   min-width: 0;
-  max-height: calc(100dvh - 9rem);
   overflow: auto;
   overscroll-behavior: contain;
-  padding: 0.75rem;
+  padding: 0 0.75rem 0.75rem;
   border: 1px solid var(--ui-border);
   border-radius: 0.75rem;
   background: var(--panel);
+  box-shadow: 0 0.75rem 2rem color-mix(in srgb, var(--pref-text-color) 22%, transparent);
 
   &:focus-visible {
     outline: 2px solid var(--pref-accent-color);
@@ -87,48 +91,46 @@
   }
 }
 
-// Only one way to show the pane toggles: below the width that fits all three panes.
-.ui-builder .ui-builder-pane-toggle {
+.ui-builder-outline {
+  left: $uib-pane-gap;
+  width: $uib-outline-width;
+}
+
+.ui-builder-inspector {
+  right: $uib-pane-gap;
+}
+
+.ui-builder-body:not([data-outline-open]) .ui-builder-outline,
+.ui-builder-body:not([data-inspector-open]) .ui-builder-inspector {
   display: none;
 }
 
-@media (max-width: $uib-wide - 1px) {
-  .ui-builder .ui-builder-pane-toggle {
-    display: inline-flex;
-  }
+// A pane's header (its name and close, or Done) stays at the top while the pane scrolls.
+.ui-builder-pane-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0 -0.75rem 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--ui-border);
+  background: var(--panel);
 
-  .ui-builder-body {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .ui-builder-body:not([data-outline-open]) .ui-builder-outline,
-  .ui-builder-body:not([data-inspector-open]) .ui-builder-inspector {
-    display: none;
-  }
-
-  .ui-builder-body[data-outline-open] {
-    grid-template-columns: 16rem minmax(0, 1fr);
-  }
-
-  .ui-builder-body[data-inspector-open] {
-    grid-template-columns: minmax(0, 1fr) 20rem;
-  }
-
-  .ui-builder-body[data-outline-open][data-inspector-open] {
-    grid-template-columns: 15rem minmax(0, 1fr) 19rem;
+  &--end {
+    justify-content: flex-end;
   }
 }
 
 @media (max-width: $uib-phone) {
-  .ui-builder-body,
-  .ui-builder-body[data-outline-open],
-  .ui-builder-body[data-inspector-open],
-  .ui-builder-body[data-outline-open][data-inspector-open] {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .ui-builder-pane {
-    max-height: none;
+  .ui-builder-pane,
+  .ui-builder-outline {
+    left: 0;
+    right: 0;
+    width: auto;
+    max-width: none;
   }
 
   .ui-builder .ui-builder-title {
@@ -157,7 +159,7 @@
 // the page see a real phone, tablet or desktop viewport.
 .ui-builder-viewport {
   position: relative;
-  // 14rem: the site header, the bar, the feedback line above the panes and the stage's own bar.
+  // 14rem: the site header, the bar, the feedback line above the canvas and the stage's own bar.
   height: clamp(26rem, calc(100dvh - 14rem), 64rem);
   overflow: hidden;
   border: 1px solid var(--ui-border);

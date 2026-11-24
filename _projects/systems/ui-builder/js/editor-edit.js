@@ -79,13 +79,13 @@ export class EditSession {
   start({ dirty = false, notes = [], error = null } = {}) {
     const { shell, doc, say } = this;
     const dialogs = this.app.dialogs;
-    this.outline = createOutline({ root: shell.outlinePane, doc, registry: this.registry, say, actions: {
+    this.outline = createOutline({ root: shell.outlineRoot || shell.outlinePane, doc, registry: this.registry, say, actions: {
       select: (id) => this.select(id), move: (id, delta) => this.move(id, delta), duplicate: (id) => this.duplicate(id),
       toggleHidden: (id) => this.toggleHidden(id), remove: (id) => this.remove(id), addBlock: (target) => this.openPalette(target),
       addSection: () => this.openSections(), drop: (id, target) => this.drop(id, target),
     } });
     this.inspector = createInspector({
-      root: shell.inspectorPane, doc, registry: this.registry, say, text: this.text, richText: this.app.deps.richText,
+      root: shell.inspectorRoot || shell.inspectorPane, doc, registry: this.registry, say, text: this.text, richText: this.app.deps.richText,
       services: {
         groups: this.app.groups(), errorText: (error) => this.app.errorText(error),
         showCode: (code) => dialogs.textExport({ title: say('code_title'), content: code, filename: 'api-data.js', mime: 'text/javascript' }),
@@ -127,9 +127,9 @@ export class EditSession {
       event.returnValue = say('leave_warning');
     };
     this.win.addEventListener('beforeunload', this.unload);
-    const wide = shell.paneOpen('outline');
-    shell.setPane('outline', wide);
-    shell.setPane('inspector', wide);
+    // The Studio opens on the page alone; the panels slide over it when asked for.
+    shell.setPane('outline', false);
+    shell.setPane('inspector', false);
     this.offerRecovery();
     this.refresh();
     if (dirty) this.session.change();
@@ -154,6 +154,8 @@ export class EditSession {
     shell.reload.addEventListener('click', () => this.bridge.reload());
     shell.dismiss.addEventListener('click', () => this.notify(''));
     shell.publish.addEventListener('click', () => this.publish());
+    if (shell.addSection) shell.addSection.addEventListener('click', () => this.openSections());
+    if (shell.inspectorDone) shell.inspectorDone.addEventListener('click', () => this.doneEditing());
     shell.preview.addEventListener('click', (event) => {
       event.preventDefault();
       if (!this.ref) return;
@@ -369,6 +371,13 @@ export class EditSession {
     if (this.state.selectedId) this.focusInspector();
   }
 
+  // The settings panel's Done: the panel closes and the canvas shows the page with nothing picked.
+  doneEditing() {
+    this.shell.setPane('inspector', false);
+    this.select(null);
+    this.bridge.focus();
+  }
+
   commit(next, { coalesceKey = null, selectedId = this.state.selectedId, announce = '' } = {}) {
     if (this.state.readOnly || this.closed || next === this.page) return false;
     if (!this.history.push(next, { coalesceKey, selectedId })) return false;
@@ -477,9 +486,12 @@ export class EditSession {
     this.commit(removeNode(this.page, id), { selectedId: after, announce: this.say('removed', { label }) });
   }
 
+  // Escape climbs: a block's section, then nothing, which also closes the settings panel.
   selectParent(id = this.state.selectedId) {
     const loc = findNode(this.page, id);
-    this.select(loc && loc.kind === 'block' ? loc.section.id : null);
+    if (loc && loc.kind === 'block') { this.select(loc.section.id); return; }
+    this.select(null);
+    if (this.shell.paneOpen('inspector')) this.shell.setPane('inspector', false);
   }
 
   // Where a new block goes: after the selected block, at the end of the selected section's first

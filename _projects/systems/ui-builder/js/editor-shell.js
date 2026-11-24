@@ -1,11 +1,12 @@
 // The editing shell's markup (DESIGN §10): the top bar, the More menu, the outline, canvas and
 // inspector panes, the banner slot and the feedback line. It owns only presentation: the
 // Preview/Code switch, the device buttons and the canvas size (scaled to fit, with the zoom
-// shown), the pane toggles below 1440px and the menu's keyboard behaviour. editor-edit.js wires
-// the actions.
+// shown), the pane toggles and the menu's keyboard behaviour. editor-edit.js wires the actions.
+//
+// Studio layout (plans/2026-11-13-ui-builder-studio.md): the canvas has the whole width and the
+// outline and settings panes are panels that slide over it, each with its own header (Done
+// closes the settings panel), the way a site builder edits on the page itself.
 import { el, icon, iconButton } from './editor-fields.js';
-
-const WIDE = '(min-width: 1440px)';
 
 // The device width shown at `scale` so it fits `available` pixels; width 0 is the pane itself.
 export function fitScale(available, deviceWidth) {
@@ -37,6 +38,7 @@ export function buildShell({ doc = globalThis.document, registry, say, caps = {}
   const realData = el(doc, 'div', { class: 'ui-builder-wrap', hidden: true },
     el(doc, 'label', { class: 'ocs__toggle', title: say('real_data_help') }, realInput, el(doc, 'span', { class: 'ocs__toggle-track', 'aria-hidden': 'true' }), el(doc, 'span', { class: 'ocs__toggle-label' }, say('real_data'))),
     el(doc, 'small', { id: 'ui-real-data-help', class: 'ui-builder-visually-hidden' }, say('real_data_help')));
+  const addSection = el(doc, 'button', { type: 'button', class: 'ocs__btn ocs__btn--icon small' }, icon(doc, 'fa-plus'), say('add_section'));
   const outlineToggle = el(doc, 'button', { type: 'button', class: 'ocs__btn ocs__btn--icon small ui-builder-pane-toggle', 'aria-expanded': 'false', 'aria-controls': 'ui-outline' }, icon(doc, 'fa-list'), say('outline_toggle'));
   const inspectorToggle = el(doc, 'button', { type: 'button', class: 'ocs__btn ocs__btn--icon small ui-builder-pane-toggle', 'aria-expanded': 'false', 'aria-controls': 'ui-inspector' }, icon(doc, 'fa-sliders'), say('inspector_toggle'));
   const preview = el(doc, 'a', { class: 'ocs__btn ocs__btn--icon small', href: '#', target: '_blank', rel: 'noopener' }, icon(doc, 'fa-eye'), say('preview_draft'));
@@ -55,10 +57,14 @@ export function buildShell({ doc = globalThis.document, registry, say, caps = {}
     el(doc, 'div', { class: 'ocs__links ui-builder-bar-group' }, back, title, saveState, publishState),
     el(doc, 'div', { class: 'ocs__links ui-builder-bar-group' }, undo, redo,
       el(doc, 'div', { class: 'ocs__links ui-builder-views', role: 'group', 'aria-label': say('view_group') }, [...viewButtons.values()]), devicesGroup, realData),
-    el(doc, 'div', { class: 'ocs__links ui-builder-bar-group' }, outlineToggle, inspectorToggle, previewWrap, liveWrap, publishWrap,
+    el(doc, 'div', { class: 'ocs__links ui-builder-bar-group' }, addSection, outlineToggle, inspectorToggle, previewWrap, liveWrap, publishWrap,
       el(doc, 'div', { class: 'ui-builder-more' }, more, menuWrap)));
 
-  const outlinePane = el(doc, 'section', { class: 'ui-builder-pane ui-builder-outline', id: 'ui-outline', 'aria-label': say('outline') });
+  // Each pane: a header with its close button, then the root its module draws into.
+  const outlineClose = iconButton(doc, { name: 'fa-xmark', label: say('pane_close', { pane: say('outline') }) });
+  const outlineRoot = el(doc, 'div', { class: 'ui-builder-pane-body' });
+  const outlinePane = el(doc, 'section', { class: 'ui-builder-pane ui-builder-outline', id: 'ui-outline', 'aria-label': say('outline') },
+    el(doc, 'div', { class: 'ui-builder-pane-head' }, el(doc, 'strong', null, say('outline')), outlineClose), outlineRoot);
   const zoom = el(doc, 'output', { class: 'ui-builder-note' }, '');
   const canvasStatus = el(doc, 'output', { class: 'ui-builder-note', 'aria-live': 'polite' }, say('canvas_loading'));
   const iframe = el(doc, 'iframe', { class: 'ui-builder-frame', title: say('canvas_title') });
@@ -68,7 +74,10 @@ export function buildShell({ doc = globalThis.document, registry, say, caps = {}
   const stagebar = el(doc, 'div', { class: 'ui-builder-stagebar' }, zoom, canvasStatus);
   const codePane = el(doc, 'div', { class: 'ui-builder-code-pane', hidden: true });
   const stage = el(doc, 'section', { class: 'ui-builder-stage', 'aria-label': say('canvas_title') }, stagebar, failed, viewport, codePane);
-  const inspectorPane = el(doc, 'section', { class: 'ui-builder-pane ui-builder-inspector', id: 'ui-inspector', 'aria-labelledby': 'ui-inspector-title', tabindex: '-1' });
+  const inspectorDone = el(doc, 'button', { type: 'button', class: 'ocs__btn small accent fill' }, say('pane_done'));
+  const inspectorRoot = el(doc, 'div', { class: 'ui-builder-pane-body' });
+  const inspectorPane = el(doc, 'section', { class: 'ui-builder-pane ui-builder-inspector', id: 'ui-inspector', 'aria-labelledby': 'ui-inspector-title', tabindex: '-1' },
+    el(doc, 'div', { class: 'ui-builder-pane-head ui-builder-pane-head--end' }, inspectorDone), inspectorRoot);
   const body = el(doc, 'div', { class: 'ui-builder-body' }, outlinePane, stage, inspectorPane);
   const banners = el(doc, 'div', { class: 'ocs__stack ui-builder-banners' });
   const feedbackText = el(doc, 'strong', null, '');
@@ -129,8 +138,7 @@ export function buildShell({ doc = globalThis.document, registry, say, caps = {}
   if (observer) observer.observe(viewport);
   else win.addEventListener('resize', fit);
 
-  // ---- panes: always open from 1440px; below, the toggles open them
-  const wide = win.matchMedia ? win.matchMedia(WIDE) : { matches: true, addEventListener() {} };
+  // ---- panes: closed until asked for, then over the canvas at every width
   function setPane(name, open) {
     const toggle = name === 'outline' ? outlineToggle : inspectorToggle;
     if (open) body.setAttribute(`data-${name}-open`, '');
@@ -141,8 +149,9 @@ export function buildShell({ doc = globalThis.document, registry, say, caps = {}
     toggle.classList.toggle('fill', open);
     fit();
   }
-  const paneOpen = (name) => wide.matches || body.hasAttribute(`data-${name}-open`);
+  const paneOpen = (name) => body.hasAttribute(`data-${name}-open`);
   outlineToggle.addEventListener('click', () => setPane('outline', !body.hasAttribute('data-outline-open')));
+  outlineClose.addEventListener('click', () => { setPane('outline', false); outlineToggle.focus(); });
   inspectorToggle.addEventListener('click', () => setPane('inspector', !body.hasAttribute('data-inspector-open')));
 
   // ---- the More menu
@@ -188,7 +197,7 @@ export function buildShell({ doc = globalThis.document, registry, say, caps = {}
   setView('preview');
   return {
     element, title, saveState, publishState, undo, redo, realInput, realData, preview, previewWrap, live, liveWrap,
-    publish, publishWrap, menuItems, outlinePane, inspectorPane, iframe, viewport, stage, canvasStatus, failed, reload,
+    publish, publishWrap, menuItems, outlinePane, inspectorPane, outlineRoot, inspectorRoot, inspectorDone, addSection, iframe, viewport, stage, canvasStatus, failed, reload,
     banners, feedbackText, dismiss, dismissWrap, feedback, outlineToggle, inspectorToggle, viewButtons, codePane,
     get device() { return device; },
     get view() { return view; },

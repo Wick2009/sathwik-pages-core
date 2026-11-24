@@ -147,7 +147,9 @@ are unchanged.
   the last) and a toolbar on each section (Edit, Move up, Move down, Duplicate, Remove), shown on
   hover, selection or focus, and only while the page can be edited (`render(spec, {editable})`).
   They only report: `onAddSection({index})` and `onSectionAction({sectionId, action})` through
-  `canvas-bridge.js`, which drops anything but the five actions.
+  `canvas-bridge.js`, which drops anything but the five actions. The outline and settings panes
+  are panels over the canvas, closed until asked for; the settings panel opens when something is
+  picked and closes on **Done** or Escape.
 
 ## Rendering and safety
 
