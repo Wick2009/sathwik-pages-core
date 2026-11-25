@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { apiBlocksOf, canvasAllowed, contextKey, keyPartOf, nodeHashes, readNonce, realDataView } from '../js/canvas.js';
+import { SectionChrome, apiBlocksOf, canvasAllowed, contextKey, keyPartOf, nodeHashes, readNonce, realDataView } from '../js/canvas.js';
+import { renderPage } from '../js/render.js';
 import { codeSnippet, listIn } from '../js/api-data.js';
 import { contentRenderers } from '../js/blocks-content.js';
 import { mountApiData } from '../js/blocks-project.js';
@@ -8,7 +9,7 @@ import { textOf } from '../js/registry.js';
 import { toDOM } from '../js/vnode.js';
 import { createPage, updateSettings, moveNode } from '../js/page-model.js';
 import { createDocument, text } from './fixtures/live/dom.mjs';
-import { ORIGIN, blocksOf, cardOf, drawPage, fetchRouter, json, mountOf, pageOf } from './fixtures/live/pages.mjs';
+import { ORIGIN, blocksOf, cardOf, drawPage, fetchRouter, json, mountOf, pageOf, renderRich } from './fixtures/live/pages.mjs';
 import { runSnippet } from './fixtures/snippet.mjs';
 import { counterIds, loadRegistry, needsRuby } from './helpers.mjs';
 
@@ -166,3 +167,49 @@ test('a failed read in the preview shows the saved copy and the doctor\'s advice
   const empty = realDataView({ ok: true, json: { jokes: [] }, url: 'https://x.example/api' }, block, canvasCtx);
   assert.deepEqual(empty, { view: null, status: textOf(registry, 'blocks.api_empty') });
 });
+
+const classesOf = (element) => String(element.getAttribute('class') || '').split(/\s+/);
+
+// The page as the canvas draws it (mode 'canvas'), in the fake document.
+function canvasPage(registry, page) {
+  const doc = createDocument();
+  const root = doc.createElement('div');
+  root.appendChild(toDOM(renderPage(page, { registry, mode: 'canvas', baseurl: '', pageOrigin: ORIGIN, renderers: contentRenderers }), { doc, renderRich }));
+  return { doc, root };
+}
+
+test('SectionChrome gives each section a grammar toolbar and Add section pill, only while editable', needsRuby, () => {
+  const registry = loadRegistry();
+  const say = (key, vars) => textOf(registry, `editor.${key}`, vars);
+  // s-000001 holds b-000002; s-000003 is empty.
+  const page = pageOf([[['heading', { text: 'Our client', level: '2', subtitle: '' }]], []]);
+  const { doc, root } = canvasPage(registry, page);
+  new SectionChrome({ doc, say }).decorate(root);
+
+  const [first, second] = root.querySelectorAll('[data-ui-kind="section"]');
+  assert.ok(classesOf(first).includes('ocs__float-host'));
+  assert.deepEqual(classesOf(first.children[0]), ['ocs__float', 'ocs__float--center'], 'the Add section pill comes first');
+  assert.equal(first.children[0].querySelector('[data-ui-add-section-at]').getAttribute('data-ui-add-section-at'), '0');
+  const bar = first.children[1];
+  assert.deepEqual(classesOf(bar), ['ocs__toolbar', 'ocs__float', 'ocs__float--end']);
+  assert.equal(bar.getAttribute('role'), 'toolbar');
+  assert.equal(bar.getAttribute('aria-label'), say('canvas_section_tools', { n: 1 }));
+  assert.deepEqual(bar.querySelectorAll('[data-ui-section-act]').map((button) => button.getAttribute('data-ui-section-act')), ['edit', 'move_up', 'move_down', 'duplicate', 'remove']);
+  assert.equal(bar.querySelector('[data-ui-section-act="move_up"]').disabled, true, 'the first section cannot move up');
+  assert.equal(second.querySelector('[data-ui-section-act="move_down"]').disabled, true, 'the last cannot move down');
+  assert.equal(bar.querySelector('[data-ui-section-act="remove"]').getAttribute('aria-label'), say('remove'), 'icon-only buttons are named');
+  const end = root.querySelector('[data-ui-add-end]');
+  assert.deepEqual(classesOf(end), ['ocs__links']);
+  assert.equal(end.querySelector('[data-ui-add-section-at]').getAttribute('data-ui-add-section-at'), '2');
+  const add = second.querySelector('[data-ui-add]');
+  assert.equal(add.getAttribute('data-ui-add-section'), 's-000003', 'the empty section gets an add button');
+  assert.equal(first.querySelector('[data-ui-add]'), null);
+
+  // Read only (someone else holds the page): none of it.
+  const plain = canvasPage(registry, page);
+  new SectionChrome({ doc: plain.doc, say }).decorate(plain.root, { editable: false });
+  assert.equal(plain.root.querySelectorAll('[data-ui-chrome]').length, 0);
+  assert.equal(plain.root.querySelectorAll('[data-ui-add]').length, 0);
+  assert.ok(!classesOf(plain.root.querySelector('[data-ui-kind="section"]')).includes('ocs__float-host'));
+});
+

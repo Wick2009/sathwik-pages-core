@@ -130,6 +130,106 @@ function notice(doc, root, text) {
   root.replaceChildren(box);
 }
 
+// Class names are read and written as text, so the same code works on every element.
+function setClass(element, name, on) {
+  const names = String(element.getAttribute('class') || '').split(/\s+/).filter(Boolean);
+  const has = names.includes(name);
+  if (on && !has) element.setAttribute('class', [...names, name].join(' '));
+  if (!on && has) element.setAttribute('class', names.filter((other) => other !== name).join(' '));
+}
+
+// The Studio's chrome on the drawn page, in grammar classes (elements/toolbars): each section is
+// an ocs__float-host with an ocs__toolbar and an Add section pill floating on its top edge. Its
+// buttons only report what they are for (data-ui-* attributes); the editor runs the action.
+export class SectionChrome {
+  constructor({ doc, say }) {
+    this.doc = doc;
+    this.say = say;
+  }
+
+  // An ocs__btn with an icon, then its words, or (icon only) its name as aria-label and title.
+  button({ iconName, label, attrs, words = false, accent = false }) {
+    const button = this.doc.createElement('button');
+    button.type = 'button';
+    // ocs__btn--icon spaces the icon from the words (a flex button drops a leading space).
+    button.className = accent ? 'ocs__btn ocs__btn--icon small accent fill' : 'ocs__btn ocs__btn--icon small';
+    for (const [name, value] of Object.entries(attrs)) button.setAttribute(name, value);
+    const glyph = this.doc.createElement('i');
+    glyph.className = `fa-solid ${iconName}`;
+    glyph.setAttribute('aria-hidden', 'true');
+    button.append(glyph);
+    if (words) button.append(this.doc.createTextNode(label));
+    else {
+      button.setAttribute('aria-label', label);
+      button.title = label;
+    }
+    return button;
+  }
+
+  // The add button in an empty cell (or in a section without cells).
+  addButton(sectionId, cellIndex) {
+    return this.button({
+      iconName: 'fa-plus', label: this.say('canvas_add'), words: true,
+      attrs: { 'data-ui-add': '', 'data-ui-add-section': sectionId, 'data-ui-add-cell': String(cellIndex) },
+    });
+  }
+
+  // An Add section pill: floating on the top edge of the section at index, or, at the end, in a
+  // row of its own after the last section.
+  addSectionPill(index, { end = false } = {}) {
+    const holder = this.doc.createElement('div');
+    holder.className = end ? 'ocs__links' : 'ocs__float ocs__float--center';
+    if (end) holder.setAttribute('data-ui-add-end', '');
+    holder.setAttribute('data-ui-chrome', '');
+    holder.append(this.button({ iconName: 'fa-plus', label: this.say('canvas_add_section'), words: true, accent: true, attrs: { 'data-ui-add-section-at': String(index) } }));
+    return holder;
+  }
+
+  // A section's toolbar, on its top right corner.
+  toolbar(sectionId, index, count) {
+    const bar = this.doc.createElement('div');
+    bar.className = 'ocs__toolbar ocs__float ocs__float--end';
+    bar.setAttribute('role', 'toolbar');
+    bar.setAttribute('aria-label', this.say('canvas_section_tools', { n: index + 1 }));
+    bar.setAttribute('data-ui-chrome', '');
+    const tool = (action, iconName, label, options = {}) => this.button({ iconName, label, ...options, attrs: { 'data-ui-section-act': action, 'data-ui-section': sectionId } });
+    const up = tool('move_up', 'fa-arrow-up', this.say('move_up'));
+    const down = tool('move_down', 'fa-arrow-down', this.say('move_down'));
+    up.disabled = index === 0;
+    down.disabled = index === count - 1;
+    bar.append(tool('edit', 'fa-pen', this.say('canvas_edit_section'), { words: true, accent: true }), up, down,
+      tool('duplicate', 'fa-clone', this.say('duplicate')), tool('remove', 'fa-trash-can', this.say('remove')));
+    return bar;
+  }
+
+  // Puts the chrome on the page drawn in root. Toolbars, pills and add buttons only while the
+  // page can be edited (read only, someone else holds it, they would do nothing); the label on
+  // hidden parts always.
+  decorate(root, { editable = true } = {}) {
+    const sections = editable ? [...root.querySelectorAll('[data-ui-kind="section"]')] : [];
+    sections.forEach((section, index) => {
+      const sectionId = section.getAttribute('data-ui-node');
+      if (!sectionId) return;
+      setClass(section, 'ocs__float-host', true);
+      const first = section.firstChild;
+      section.insertBefore(this.addSectionPill(index), first);
+      section.insertBefore(this.toolbar(sectionId, index, sections.length), first);
+    });
+    const article = root.querySelector('[data-ui-page]');
+    if (article && editable) article.append(this.addSectionPill(sections.length, { end: true }));
+    for (const section of sections) {
+      const sectionId = section.getAttribute('data-ui-node');
+      if (!sectionId || section.hasAttribute('data-ui-error')) continue;
+      const cells = [...section.children].filter((child) => child.hasAttribute('data-ui-cell'));
+      const holders = cells.length ? cells : [section];
+      holders.forEach((holder, index) => {
+        if (!holder.querySelector('[data-ui-kind="block"]')) holder.appendChild(this.addButton(sectionId, index));
+      });
+    }
+    for (const hidden of root.querySelectorAll('[data-ui-hidden]')) hidden.setAttribute('data-ui-hidden-label', this.say('canvas_hidden'));
+  }
+}
+
 export function startCanvas({ root, richText, baseurl = '', win = globalThis.window, doc = globalThis.document } = {}) {
   if (!root) throw new Error('UI Builder canvas: root is required');
   const registry = readRegistry(doc);
@@ -144,6 +244,7 @@ export function startCanvas({ root, richText, baseurl = '', win = globalThis.win
   const hooks = createRichHooks({ richText, baseurl, pageOrigin, doc });
   const ctx = { registry, mode: 'canvas', baseurl, pageOrigin, renderers: contentRenderers };
   const handlers = { select: null, hover: null, add: null, key: null, sectionAction: null, addSection: null };
+  const chrome = new SectionChrome({ doc, say });
   const emit = (name, value) => {
     const fn = handlers[name];
     if (typeof fn !== 'function') return;
@@ -170,92 +271,12 @@ export function startCanvas({ root, richText, baseurl = '', win = globalThis.win
   // its ocs__float-host).
   function showSelection() {
     const element = mark('data-ui-selected', selectedId);
-    for (const section of root.querySelectorAll('[data-ui-kind="section"]')) section.classList.toggle('is-active', section === element);
+    for (const section of root.querySelectorAll('[data-ui-kind="section"]')) setClass(section, 'is-active', section === element);
   }
 
-  function addButton(sectionId, cellIndex) {
-    const button = doc.createElement('button');
-    button.type = 'button';
-    // ocs__btn--icon spaces the icon from the words (a flex button drops a leading space).
-    button.className = 'ocs__btn ocs__btn--icon small';
-    button.setAttribute('data-ui-add', '');
-    button.setAttribute('data-ui-add-section', sectionId);
-    button.setAttribute('data-ui-add-cell', String(cellIndex));
-    const icon = doc.createElement('i');
-    icon.className = 'fa-solid fa-plus';
-    icon.setAttribute('aria-hidden', 'true');
-    button.append(icon, doc.createTextNode(say('canvas_add')));
-    return button;
-  }
-
-  function chromeButton({ iconName, label, attrs, words = false, className = 'ocs__btn ocs__btn--icon small' }) {
-    const button = doc.createElement('button');
-    button.type = 'button';
-    button.className = className;
-    for (const [name, value] of Object.entries(attrs)) button.setAttribute(name, value);
-    const glyph = doc.createElement('i');
-    glyph.className = `fa-solid ${iconName}`;
-    glyph.setAttribute('aria-hidden', 'true');
-    button.append(glyph);
-    if (words) button.append(doc.createTextNode(label));
-    else {
-      button.setAttribute('aria-label', label);
-      button.title = label;
-    }
-    return button;
-  }
-
-  // An Add section pill: above a section (index = its place), or after the last one.
-  function addSectionPill(index, { end = false } = {}) {
-    const holder = doc.createElement('div');
-    // Grammar toolbars (elements/toolbars): floating on the section's top edge, or at the end in a
-    // row of its own under the last section.
-    holder.className = end ? 'ocs__links' : 'ocs__float ocs__float--center';
-    if (end) holder.setAttribute('data-ui-add-end', '');
-    holder.setAttribute('data-ui-chrome', '');
-    holder.append(chromeButton({ iconName: 'fa-plus', label: say('canvas_add_section'), words: true, className: 'ocs__btn ocs__btn--icon small accent fill', attrs: { 'data-ui-add-section-at': String(index) } }));
-    return holder;
-  }
-
-  // The section's hover toolbar. Its buttons only report; the editor runs the action.
-  function sectionTools(sectionId, index, count) {
-    const bar = doc.createElement('div');
-    bar.className = 'ocs__toolbar ocs__float ocs__float--end';
-    bar.setAttribute('role', 'toolbar');
-    bar.setAttribute('aria-label', say('canvas_section_tools', { n: index + 1 }));
-    bar.setAttribute('data-ui-chrome', '');
-    const tool = (action, iconName, label, extra = {}) => chromeButton({ iconName, label, attrs: { 'data-ui-section-act': action, 'data-ui-section': sectionId, ...extra } });
-    const edit = chromeButton({ iconName: 'fa-pen', label: say('canvas_edit_section'), words: true, className: 'ocs__btn ocs__btn--icon small accent fill', attrs: { 'data-ui-section-act': 'edit', 'data-ui-section': sectionId } });
-    const up = tool('move_up', 'fa-arrow-up', say('move_up'));
-    const down = tool('move_down', 'fa-arrow-down', say('move_down'));
-    up.disabled = index === 0;
-    down.disabled = index === count - 1;
-    bar.append(edit, up, down, tool('duplicate', 'fa-clone', say('duplicate')), tool('remove', 'fa-trash-can', say('remove')));
-    return bar;
-  }
-
-  // Canvas chrome around the page: the Studio's section toolbars and Add section pills, add
-  // buttons in empty cells (only while the page can be edited) and a label on hidden parts.
+  // The Studio's chrome (SectionChrome), then the selection and hover marks over it.
   function decorate({ editable = true } = {}) {
-    const sections = [...root.querySelectorAll('[data-ui-kind="section"]')];
-    if (editable) sections.forEach((section, index) => {
-      const sectionId = section.getAttribute('data-ui-node');
-      if (!sectionId) return;
-      section.classList.add('ocs__float-host');
-      section.prepend(addSectionPill(index), sectionTools(sectionId, index, sections.length));
-    });
-    const article = root.querySelector('[data-ui-page]');
-    if (article && editable) article.append(addSectionPill(sections.length, { end: true }));
-    for (const section of editable ? sections : []) {
-      const sectionId = section.getAttribute('data-ui-node');
-      if (!sectionId || section.hasAttribute('data-ui-error')) continue;
-      const cells = [...section.children].filter((child) => child.hasAttribute('data-ui-cell'));
-      const holders = cells.length ? cells : [section];
-      holders.forEach((holder, index) => {
-        if (!holder.querySelector('[data-ui-kind="block"]')) holder.appendChild(addButton(sectionId, index));
-      });
-    }
-    for (const hidden of root.querySelectorAll('[data-ui-hidden]')) hidden.setAttribute('data-ui-hidden-label', say('canvas_hidden'));
+    chrome.decorate(root, { editable });
     showSelection();
     mark('data-ui-hover', hoverId);
   }
