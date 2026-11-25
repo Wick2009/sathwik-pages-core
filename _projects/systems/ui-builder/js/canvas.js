@@ -23,101 +23,12 @@ const isObject = (value) => value !== null && typeof value === 'object' && !Arra
 const own = (value, key) => (isObject(value) && Object.prototype.hasOwnProperty.call(value, key) ? value[key] : undefined);
 const listOf = (value) => (Array.isArray(value) ? value : []);
 
-export function readNonce(search) {
-  const nonce = new URLSearchParams(String(search || '')).get('nonce');
-  return nonce && NONCE.test(nonce) ? nonce : null;
-}
-
-// Only under a parent window of this same origin: anywhere else the canvas would hand its API to
-// a page it doesn't know. Reading a cross-origin parent's location throws.
-export function canvasAllowed(win) {
-  try {
-    return Boolean(win) && win.parent !== win && win.parent.location.origin === win.location.origin;
-  } catch (_) {
-    return false;
-  }
-}
-
-// What each node's DOM depends on. A section's own settings and the order of its blocks (not
-// their content, so editing a block never rebuilds its neighbours); a block's whole JSON.
-export function nodeHashes(page) {
-  const out = new Map();
-  for (const section of listOf(own(page, 'sections'))) {
-    const id = own(section, 'id');
-    if (typeof id !== 'string' || out.has(id)) continue;
-    const cells = listOf(own(section, 'cells')).map((cell) => listOf(own(cell, 'blocks')).map((block) => own(block, 'id')));
-    out.set(id, JSON.stringify([own(section, 'type'), own(section, 'settings'), own(section, 'hidden') === true, cells]));
-    for (const cell of listOf(own(section, 'cells'))) {
-      for (const block of listOf(own(cell, 'blocks'))) {
-        const blockId = own(block, 'id');
-        if (typeof blockId === 'string' && !out.has(blockId)) out.set(blockId, JSON.stringify(block));
-      }
-    }
-  }
-  return out;
-}
-
-// Everything every block depends on: the page's own settings (a calendar uses its course, the
-// width sets the container) and the real-data switch. A change here redraws every block.
-export function contextKey(page, realData) {
-  return JSON.stringify([own(page, 'page'), realData === true]);
-}
-
-export function apiBlocksOf(page) {
-  const out = [];
-  for (const section of listOf(own(page, 'sections'))) {
-    for (const cell of listOf(own(section, 'cells'))) {
-      for (const block of listOf(own(cell, 'blocks'))) {
-        if (own(block, 'type') === 'api_data' && typeof own(block, 'id') === 'string') out.push(block);
-      }
-    }
-  }
-  return out;
-}
-
-// What "Real data while editing" shows for one Data from your API block, from its fetchJson
-// result: the published page's own list rule (api-data.js listIn) and markup (blocks-project.js
-// renderApiItems), so the preview is what visitors will see. A failed read shows the saved copy,
-// if there is one, and the doctor's advice. ctx is the canvas render context.
-// → {view: vnode or null, status: text}
-export function realDataView(result, block, ctx) {
-  const { registry } = ctx;
-  const settings = isObject(own(block, 'settings')) ? block.settings : {};
-  const source = isObject(own(settings, 'source')) ? settings.source : {};
-  const limit = Number.isInteger(settings.limit) ? Math.min(Math.max(settings.limit, 1), 50) : 12;
-  if (result.ok) {
-    const cookieDomain = own(registry.security, 'cookie_domain');
-    const items = mapItems(listIn(result.json, source.list_path), source, {
-      limit, itemChars: (registry.limits || {}).api_item_chars || 500, baseurl: ctx.baseurl, pageOrigin: ctx.pageOrigin,
-      cookieDomain: typeof cookieDomain === 'string' ? cookieDomain : '', sourceUrl: result.url,
-    });
-    const view = renderApiItems(items, settings, ctx);
-    return { view, status: view ? '' : textOf(registry, 'blocks.api_empty') };
-  }
-  const problem = doctor(result, { url: source.url, pageOrigin: ctx.pageOrigin }).find((line) => line.level === 'error');
-  return {
-    view: renderApiItems(listOf(own(source.snapshot, 'items')).slice(0, limit), settings, ctx),
-    status: problem ? textOf(registry, `doctor.${problem.key}`, problem.vars) : '',
-  };
-}
-
 function closestNode(target) {
   for (let node = target; node && node.nodeType === 1; node = node.parentElement) {
     const id = node.getAttribute('data-ui-node');
     if (id) return node;
   }
   return null;
-}
-
-// The part of the page a key was pressed in, sent with the key so Delete or a move acts on what
-// has focus: the id of the block or section around the focused element, '' on an add button or
-// an Add section pill
-// (no part to act on) and null when nothing in the page has focus (the editor's selection then).
-export function keyPartOf(target) {
-  if (!target || target.nodeType !== 1) return null;
-  if (target.closest('[data-ui-add], [data-ui-add-section-at]')) return '';
-  const node = target.closest('[data-ui-node]');
-  return node ? node.getAttribute('data-ui-node') : null;
 }
 
 function notice(doc, root, text) {
@@ -230,6 +141,213 @@ export class SectionChrome {
   }
 }
 
+// Keeps the DOM of blocks whose JSON didn't change since the last render, as long as nothing
+// every block depends on changed either.
+export class BlockCache {
+  // What each node's DOM depends on. A section's own settings and the order of its blocks (not
+  // their content, so editing a block never rebuilds its neighbours); a block's whole JSON.
+  static nodeHashes(page) {
+    const out = new Map();
+    for (const section of listOf(own(page, 'sections'))) {
+      const id = own(section, 'id');
+      if (typeof id !== 'string' || out.has(id)) continue;
+      const cells = listOf(own(section, 'cells')).map((cell) => listOf(own(cell, 'blocks')).map((block) => own(block, 'id')));
+      out.set(id, JSON.stringify([own(section, 'type'), own(section, 'settings'), own(section, 'hidden') === true, cells]));
+      for (const cell of listOf(own(section, 'cells'))) {
+        for (const block of listOf(own(cell, 'blocks'))) {
+          const blockId = own(block, 'id');
+          if (typeof blockId === 'string' && !out.has(blockId)) out.set(blockId, JSON.stringify(block));
+        }
+      }
+    }
+    return out;
+  }
+
+  // Everything every block depends on: the page's own settings (a calendar uses its course, the
+  // width sets the container) and the real-data switch. A change here redraws every block.
+  static contextKey(page, realData) {
+    return JSON.stringify([own(page, 'page'), realData === true]);
+  }
+
+  constructor() {
+    this.clear();
+  }
+
+  clear() {
+    this.key = null;
+    this.hashes = new Map();
+    this.blocks = new Map();
+  }
+
+  // Puts the old DOM back in place of each freshly drawn block that didn't change.
+  reuse(fresh, key, hashes) {
+    if (key !== this.key || !fresh.querySelectorAll) return;
+    const used = new Set();
+    for (const element of fresh.querySelectorAll('[data-ui-kind="block"][data-ui-node]')) {
+      const id = element.getAttribute('data-ui-node');
+      const old = this.blocks.get(id);
+      if (old && !used.has(old) && this.hashes.get(id) === hashes.get(id)) {
+        element.replaceWith(old);
+        used.add(old);
+      }
+    }
+  }
+
+  // Remembers the blocks now drawn in root, for the next render.
+  remember(root, key, hashes) {
+    const blocks = new Map();
+    for (const element of root.querySelectorAll('[data-ui-kind="block"][data-ui-node]')) {
+      const id = element.getAttribute('data-ui-node');
+      if (id && !blocks.has(id)) blocks.set(id, element);
+    }
+    this.key = key;
+    this.hashes = hashes;
+    this.blocks = blocks;
+  }
+
+  block(id) {
+    return this.blocks.get(id);
+  }
+}
+
+// "Real data while editing": each Data from your API block shows what the published page would,
+// read a second after its address last changed. Answers are kept by address until the switch is
+// turned on again. view() says what the canvas shows now: {page, cache (its BlockCache), on}.
+export class RealDataPreview {
+  static apiBlocksOf(page) {
+    const out = [];
+    for (const section of listOf(own(page, 'sections'))) {
+      for (const cell of listOf(own(section, 'cells'))) {
+        for (const block of listOf(own(cell, 'blocks'))) {
+          if (own(block, 'type') === 'api_data' && typeof own(block, 'id') === 'string') out.push(block);
+        }
+      }
+    }
+    return out;
+  }
+
+  // What the preview shows for one Data from your API block, from its fetchJson result: the
+  // published page's own list rule (api-data.js listIn) and markup (blocks-project.js
+  // renderApiItems), so the preview is what visitors will see. A failed read shows the saved
+  // copy, if there is one, and the doctor's advice. ctx is the canvas render context.
+  // → {view: vnode or null, status: text}
+  static realDataView(result, block, ctx) {
+    const { registry } = ctx;
+    const settings = isObject(own(block, 'settings')) ? block.settings : {};
+    const source = isObject(own(settings, 'source')) ? settings.source : {};
+    const limit = Number.isInteger(settings.limit) ? Math.min(Math.max(settings.limit, 1), 50) : 12;
+    if (result.ok) {
+      const cookieDomain = own(registry.security, 'cookie_domain');
+      const items = mapItems(listIn(result.json, source.list_path), source, {
+        limit, itemChars: (registry.limits || {}).api_item_chars || 500, baseurl: ctx.baseurl, pageOrigin: ctx.pageOrigin,
+        cookieDomain: typeof cookieDomain === 'string' ? cookieDomain : '', sourceUrl: result.url,
+      });
+      const view = renderApiItems(items, settings, ctx);
+      return { view, status: view ? '' : textOf(registry, 'blocks.api_empty') };
+    }
+    const problem = doctor(result, { url: source.url, pageOrigin: ctx.pageOrigin }).find((line) => line.level === 'error');
+    return {
+      view: renderApiItems(listOf(own(source.snapshot, 'items')).slice(0, limit), settings, ctx),
+      status: problem ? textOf(registry, `doctor.${problem.key}`, problem.vars) : '',
+    };
+  }
+
+  constructor({ ctx, doc, win, say, limits = {}, view }) {
+    this.ctx = ctx;
+    this.doc = doc;
+    this.win = win;
+    this.say = say;
+    this.limits = limits;
+    this.view = view;
+    this.results = new Map();
+    this.timers = new Map();
+    this.wanted = new Map();
+  }
+
+  // Switching on reads the APIs again.
+  restart() {
+    this.results.clear();
+  }
+
+  paintBlock(element, block) {
+    const settings = isObject(block.settings) ? block.settings : {};
+    const source = isObject(settings.source) ? settings.source : {};
+    const mount = element.querySelector('[data-ui-live-mount]');
+    const status = element.querySelector('[data-ui-live-status]');
+    const entry = this.results.get(String(source.url || '').trim());
+    if (!mount || !status || !entry) return;
+    if (entry.loading) {
+      status.textContent = this.say('canvas_real_loading');
+      return;
+    }
+    // Once the API has answered, the sample gives way to what visitors would see, even nothing.
+    const { view, status: line } = RealDataPreview.realDataView(entry.result, block, this.ctx);
+    mount.replaceChildren(...(view ? [toDOM(view, { doc: this.doc })] : []));
+    status.textContent = line;
+  }
+
+  fetchSource(url) {
+    if (this.results.has(url)) return;
+    this.results.set(url, { loading: true });
+    const { win, limits } = this;
+    fetchJson(url, {
+      mode: 'canvas', pageHost: win.location.hostname, pageProtocol: win.location.protocol,
+      timeoutMs: limits.api_timeout_ms || 8000, maxChars: limits.api_max_chars || 512000,
+    }).then((result) => {
+      this.results.set(url, { result });
+      if (this.view().on) this.paint();
+    });
+  }
+
+  // One fetch per change of a block's source, a second after the last change to it.
+  paint() {
+    const { page, cache } = this.view();
+    for (const block of RealDataPreview.apiBlocksOf(page)) {
+      const element = cache.block(block.id);
+      const url = String(own(own(own(block, 'settings'), 'source'), 'url') || '').trim();
+      if (!element || !url) continue;
+      if (this.results.has(url)) {
+        this.paintBlock(element, block);
+        continue;
+      }
+      if (this.wanted.get(block.id) === url && this.timers.has(block.id)) continue;
+      clearTimeout(this.timers.get(block.id));
+      this.wanted.set(block.id, url);
+      this.timers.set(block.id, setTimeout(() => {
+        this.timers.delete(block.id);
+        this.fetchSource(url);
+        if (this.view().on) this.paint();
+      }, FETCH_DELAY_MS));
+    }
+  }
+}
+
+export function readNonce(search) {
+  const nonce = new URLSearchParams(String(search || '')).get('nonce');
+  return nonce && NONCE.test(nonce) ? nonce : null;
+}
+
+// Only under a parent window of this same origin: anywhere else the canvas would hand its API to
+// a page it doesn't know. Reading a cross-origin parent's location throws.
+export function canvasAllowed(win) {
+  try {
+    return Boolean(win) && win.parent !== win && win.parent.location.origin === win.location.origin;
+  } catch (_) {
+    return false;
+  }
+}
+
+// The part of the page a key was pressed in, sent with the key so Delete or a move acts on what
+// has focus: the id of the block or section around the focused element, '' on an add button or
+// an Add section pill
+// (no part to act on) and null when nothing in the page has focus (the editor's selection then).
+export function keyPartOf(target) {
+  if (!target || target.nodeType !== 1) return null;
+  if (target.closest('[data-ui-add], [data-ui-add-section-at]')) return '';
+  const node = target.closest('[data-ui-node]');
+  return node ? node.getAttribute('data-ui-node') : null;
+}
+
 export function startCanvas({ root, richText, baseurl = '', win = globalThis.window, doc = globalThis.document } = {}) {
   if (!root) throw new Error('UI Builder canvas: root is required');
   const registry = readRegistry(doc);
@@ -245,6 +363,10 @@ export function startCanvas({ root, richText, baseurl = '', win = globalThis.win
   const ctx = { registry, mode: 'canvas', baseurl, pageOrigin, renderers: contentRenderers };
   const handlers = { select: null, hover: null, add: null, key: null, sectionAction: null, addSection: null };
   const chrome = new SectionChrome({ doc, say });
+  const cache = new BlockCache();
+  let page = null;
+  let realData = false;
+  const real = new RealDataPreview({ ctx, doc, win, say, limits, view: () => ({ page, cache, on: realData }) });
   const emit = (name, value) => {
     const fn = handlers[name];
     if (typeof fn !== 'function') return;
@@ -254,10 +376,8 @@ export function startCanvas({ root, richText, baseurl = '', win = globalThis.win
       console.error('UI Builder canvas: the editor callback failed', error);
     }
   };
-  let state = { key: null, hashes: new Map(), blocks: new Map(), page: null, realData: false };
   let selectedId = null;
   let hoverId = null;
-  const real = { results: new Map(), timers: new Map(), wanted: new Map() };
 
   function mark(attribute, id) {
     for (const element of root.querySelectorAll(`[${attribute}]`)) element.removeAttribute(attribute);
@@ -281,107 +401,46 @@ export function startCanvas({ root, richText, baseurl = '', win = globalThis.win
     mark('data-ui-hover', hoverId);
   }
 
-  function paintApi(element, block) {
-    const settings = isObject(block.settings) ? block.settings : {};
-    const source = isObject(settings.source) ? settings.source : {};
-    const mount = element.querySelector('[data-ui-live-mount]');
-    const status = element.querySelector('[data-ui-live-status]');
-    const entry = real.results.get(String(source.url || '').trim());
-    if (!mount || !status || !entry) return;
-    if (entry.loading) {
-      status.textContent = say('canvas_real_loading');
-      return;
-    }
-    // Once the API has answered, the sample gives way to what visitors would see, even nothing.
-    const { view, status: line } = realDataView(entry.result, block, ctx);
-    mount.replaceChildren(...(view ? [toDOM(view, { doc })] : []));
-    status.textContent = line;
-  }
-
-  function fetchSource(url) {
-    if (real.results.has(url)) return;
-    real.results.set(url, { loading: true });
-    fetchJson(url, {
-      mode: 'canvas', pageHost: win.location.hostname, pageProtocol: win.location.protocol,
-      timeoutMs: limits.api_timeout_ms || 8000, maxChars: limits.api_max_chars || 512000,
-    }).then((result) => {
-      real.results.set(url, { result });
-      if (state.realData) paintRealData();
-    });
-  }
-
-  // One fetch per change of a block's source, a second after the last change to it.
-  function paintRealData() {
-    for (const block of apiBlocksOf(state.page)) {
-      const element = state.blocks.get(block.id);
-      const url = String(own(own(own(block, 'settings'), 'source'), 'url') || '').trim();
-      if (!element || !url) continue;
-      if (real.results.has(url)) {
-        paintApi(element, block);
-        continue;
-      }
-      if (real.wanted.get(block.id) === url && real.timers.has(block.id)) continue;
-      clearTimeout(real.timers.get(block.id));
-      real.wanted.set(block.id, url);
-      real.timers.set(block.id, setTimeout(() => {
-        real.timers.delete(block.id);
-        fetchSource(url);
-        if (state.realData) paintRealData();
-      }, FETCH_DELAY_MS));
-    }
+  // A page the renderer can't read at all (blocks have their own error boundaries): a note
+  // instead, and nothing kept for the next render.
+  function fail(text) {
+    notice(doc, root, text);
+    cache.clear();
+    page = null;
+    return Promise.resolve();
   }
 
   function render(specJson, options = {}) {
-    let page;
+    let next;
     try {
-      page = typeof specJson === 'string' ? JSON.parse(specJson) : null;
+      next = typeof specJson === 'string' ? JSON.parse(specJson) : null;
     } catch (error) {
-      page = null;
+      next = null;
     }
-    if (!isObject(page)) {
-      notice(doc, root, say('canvas_bad_page', { message: 'JSON' }));
-      state = { ...state, key: null, blocks: new Map(), page: null };
-      return Promise.resolve();
-    }
-    const realData = own(options, 'realData') === true;
-    if (realData && !state.realData) real.results.clear(); // switching on reads the APIs again
+    if (!isObject(next)) return fail(say('canvas_bad_page', { message: 'JSON' }));
+    const wantReal = own(options, 'realData') === true;
+    if (wantReal && !realData) real.restart(); // switching on reads the APIs again
     selectedId = typeof own(options, 'selectedId') === 'string' ? options.selectedId : null;
-    const key = contextKey(page, realData);
-    const hashes = nodeHashes(page);
+    const key = BlockCache.contextKey(next, wantReal);
+    const hashes = BlockCache.nodeHashes(next);
     let fresh;
     try {
-      fresh = toDOM(renderPage(page, ctx), { doc, renderRich: hooks.renderRich });
+      fresh = toDOM(renderPage(next, ctx), { doc, renderRich: hooks.renderRich });
     } catch (error) {
-      // Blocks have their own error boundaries; this is a page the renderer can't read at all.
       console.error('UI Builder canvas: the page could not be drawn', error);
-      notice(doc, root, say('canvas_bad_page', { message: error && error.message ? error.message : '' }));
-      state = { ...state, key: null, blocks: new Map(), page: null };
-      return Promise.resolve();
+      return fail(say('canvas_bad_page', { message: error && error.message ? error.message : '' }));
     }
-    if (key === state.key && fresh.querySelectorAll) {
-      const used = new Set();
-      for (const element of fresh.querySelectorAll('[data-ui-kind="block"][data-ui-node]')) {
-        const id = element.getAttribute('data-ui-node');
-        const old = state.blocks.get(id);
-        if (old && !used.has(old) && state.hashes.get(id) === hashes.get(id)) {
-          element.replaceWith(old);
-          used.add(old);
-        }
-      }
-    }
+    cache.reuse(fresh, key, hashes);
     const scroller = doc.scrollingElement || doc.documentElement;
     const top = scroller.scrollTop;
     root.replaceChildren(fresh);
     scroller.scrollTop = top;
-    const blocks = new Map();
-    for (const element of root.querySelectorAll('[data-ui-kind="block"][data-ui-node]')) {
-      const id = element.getAttribute('data-ui-node');
-      if (id && !blocks.has(id)) blocks.set(id, element);
-    }
-    state = { key, hashes, blocks, page, realData };
+    cache.remember(root, key, hashes);
+    page = next;
+    realData = wantReal;
     // Read only (someone else holds the page): no toolbars or add buttons that would do nothing.
     decorate({ editable: own(options, 'editable') !== false });
-    if (realData) paintRealData();
+    if (realData) real.paint();
     return Promise.resolve();
   }
 

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { SectionChrome, apiBlocksOf, canvasAllowed, contextKey, keyPartOf, nodeHashes, readNonce, realDataView } from '../js/canvas.js';
+import { BlockCache, RealDataPreview, SectionChrome, canvasAllowed, keyPartOf, readNonce } from '../js/canvas.js';
 import { renderPage } from '../js/render.js';
 import { codeSnippet, listIn } from '../js/api-data.js';
 import { contentRenderers } from '../js/blocks-content.js';
@@ -12,6 +12,9 @@ import { createDocument, text } from './fixtures/live/dom.mjs';
 import { ORIGIN, blocksOf, cardOf, drawPage, fetchRouter, json, mountOf, pageOf, renderRich } from './fixtures/live/pages.mjs';
 import { runSnippet } from './fixtures/snippet.mjs';
 import { counterIds, loadRegistry, needsRuby } from './helpers.mjs';
+
+const { contextKey, nodeHashes } = BlockCache;
+const { apiBlocksOf, realDataView } = RealDataPreview;
 
 test('the canvas reads only a well-formed nonce from its address', () => {
   assert.equal(readNonce('?nonce=0123456789abcdef0123456789abcdef'), '0123456789abcdef0123456789abcdef');
@@ -170,11 +173,13 @@ test('a failed read in the preview shows the saved copy and the doctor\'s advice
 
 const classesOf = (element) => String(element.getAttribute('class') || '').split(/\s+/);
 
-// The page as the canvas draws it (mode 'canvas'), in the fake document.
+// The page as the canvas draws it (mode 'canvas'), in a fake document.
+const canvasDOM = (doc, registry, page) => toDOM(renderPage(page, { registry, mode: 'canvas', baseurl: '', pageOrigin: ORIGIN, renderers: contentRenderers }), { doc, renderRich });
+
 function canvasPage(registry, page) {
   const doc = createDocument();
   const root = doc.createElement('div');
-  root.appendChild(toDOM(renderPage(page, { registry, mode: 'canvas', baseurl: '', pageOrigin: ORIGIN, renderers: contentRenderers }), { doc, renderRich }));
+  root.appendChild(canvasDOM(doc, registry, page));
   return { doc, root };
 }
 
@@ -211,5 +216,32 @@ test('SectionChrome gives each section a grammar toolbar and Add section pill, o
   assert.equal(plain.root.querySelectorAll('[data-ui-chrome]').length, 0);
   assert.equal(plain.root.querySelectorAll('[data-ui-add]').length, 0);
   assert.ok(!classesOf(plain.root.querySelector('[data-ui-kind="section"]')).includes('ocs__float-host'));
+});
+
+test('BlockCache puts back the DOM of blocks that did not change, while the page settings stay the same', needsRuby, () => {
+  const registry = loadRegistry();
+  const page = pageOf([[['heading', { text: 'Our client', level: '2', subtitle: '' }], ['text', { body: 'We map floods.' }]]]);
+  const { doc, root } = canvasPage(registry, page);
+  const cache = new BlockCache();
+  cache.remember(root, contextKey(page, false), nodeHashes(page));
+  const heading = root.querySelector('[data-ui-node="b-000002"]');
+  const body = root.querySelector('[data-ui-node="b-000003"]');
+  assert.equal(cache.block('b-000002'), heading);
+
+  page.sections[0].cells[0].blocks[1].settings.body = 'We map floods and fires.';
+  const fresh = doc.createElement('div');
+  fresh.appendChild(canvasDOM(doc, registry, page));
+  cache.reuse(fresh, contextKey(page, false), nodeHashes(page));
+  assert.equal(fresh.querySelector('[data-ui-node="b-000002"]'), heading, 'the unchanged block keeps its element');
+  assert.notEqual(fresh.querySelector('[data-ui-node="b-000003"]'), body, 'the edited block is drawn again');
+
+  // Real data switched on changes what every block depends on: nothing is kept.
+  const again = doc.createElement('div');
+  again.appendChild(canvasDOM(doc, registry, page));
+  cache.remember(fresh, contextKey(page, false), nodeHashes(page));
+  cache.reuse(again, contextKey(page, true), nodeHashes(page));
+  assert.notEqual(again.querySelector('[data-ui-node="b-000002"]'), heading);
+  cache.clear();
+  assert.equal(cache.block('b-000002'), undefined);
 });
 
