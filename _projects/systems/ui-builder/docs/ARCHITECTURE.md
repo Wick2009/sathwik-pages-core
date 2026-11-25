@@ -93,6 +93,23 @@ layout loads the site's stylesheet, fonts, icons and theme script and nothing el
 site head. It must not include `head-custom.html`, which adds the site's keyboard shortcuts,
 analytics and other scripts; the canvas sends its shortcut keys to the editor instead.
 
+In the frame, the canvas is an object: `BuilderCanvas` (`canvas.js`) draws each page the editor
+sends and reports clicks, hovers and keys through its frozen `api` (`window.OCSUiCanvas`). It uses
+three helpers: `SectionChrome` for the toolbars, pills and add buttons, `BlockCache`, which keeps
+the DOM of blocks that didn't change, and `RealDataPreview` for "Real data while editing". The
+editor reaches it through `canvas-bridge.js`.
+
+```mermaid
+flowchart LR
+  Edit["EditSession (editor-edit.js)"] -->|"render, select, scrollTo"| Bridge["canvas-bridge.js"]
+  Bridge -->|"iframe + nonce"| Canvas["BuilderCanvas (frame)"]
+  Canvas --> Chrome["SectionChrome"]
+  Canvas --> Cache["BlockCache"]
+  Canvas --> Real["RealDataPreview"]
+  Canvas -->|"onSelect, onSectionAction, onAddSection, onKey"| Bridge
+  Bridge -->|"checked callbacks"| Edit
+```
+
 ## The page document
 
 ```json

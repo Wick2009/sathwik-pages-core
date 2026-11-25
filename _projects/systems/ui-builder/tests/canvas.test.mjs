@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { BlockCache, RealDataPreview, SectionChrome, canvasAllowed, keyPartOf, readNonce } from '../js/canvas.js';
+import { BlockCache, BuilderCanvas, RealDataPreview, SectionChrome } from '../js/canvas.js';
 import { renderPage } from '../js/render.js';
 import { codeSnippet, listIn } from '../js/api-data.js';
 import { contentRenderers } from '../js/blocks-content.js';
@@ -8,11 +8,12 @@ import { mountApiData } from '../js/blocks-project.js';
 import { textOf } from '../js/registry.js';
 import { toDOM } from '../js/vnode.js';
 import { createPage, updateSettings, moveNode } from '../js/page-model.js';
-import { createDocument, text } from './fixtures/live/dom.mjs';
+import { createDocument, createEvent, createWindow, text } from './fixtures/live/dom.mjs';
 import { ORIGIN, blocksOf, cardOf, drawPage, fetchRouter, json, mountOf, pageOf, renderRich } from './fixtures/live/pages.mjs';
 import { runSnippet } from './fixtures/snippet.mjs';
 import { counterIds, loadRegistry, needsRuby } from './helpers.mjs';
 
+const { canvasAllowed, keyPartOf, readNonce } = BuilderCanvas;
 const { contextKey, nodeHashes } = BlockCache;
 const { apiBlocksOf, realDataView } = RealDataPreview;
 
@@ -243,5 +244,56 @@ test('BlockCache puts back the DOM of blocks that did not change, while the page
   assert.notEqual(again.querySelector('[data-ui-node="b-000002"]'), heading);
   cache.clear();
   assert.equal(cache.block('b-000002'), undefined);
+});
+
+// A canvas in a fake frame, as BuilderCanvas.start makes it but without the handshake: the test
+// talks to its api the way the editor's bridge does.
+function canvasFor(registry) {
+  const doc = createDocument();
+  doc.documentElement = doc.createElement('html');
+  const nonce = '0123456789abcdef0123456789abcdef';
+  const win = createWindow(doc, { href: `${ORIGIN}/ui-builder/canvas/?nonce=${nonce}`, framed: true });
+  const root = doc.createElement('div');
+  doc.body.appendChild(root);
+  const canvas = new BuilderCanvas({ root, registry, nonce, richText: { renderRichMessage: renderRich }, win, doc });
+  canvas.listen();
+  return { canvas, root };
+}
+
+// A click as the browser sends it: it bubbles up to the canvas's listener on the document.
+const press = (element) => element.dispatchEvent(createEvent('click', { stopPropagation() {} }));
+
+test('BuilderCanvas marks the chosen section is-active, and its chrome only reports clicks', needsRuby, async () => {
+  const { canvas, root } = canvasFor(loadRegistry());
+  const actions = [];
+  const adds = [];
+  const cells = [];
+  canvas.api.onSectionAction((request) => actions.push(request));
+  canvas.api.onAddSection((request) => adds.push(request));
+  canvas.api.onAddRequest((request) => cells.push(request));
+  // s-000001 holds b-000002; s-000003 is empty.
+  const page = pageOf([[['heading', { text: 'Our client', level: '2', subtitle: '' }]], []]);
+  await canvas.api.render(JSON.stringify(page), { selectedId: 's-000001' });
+  const [first, second] = root.querySelectorAll('[data-ui-kind="section"]');
+  assert.ok(classesOf(first).includes('is-active') && !classesOf(second).includes('is-active'));
+  canvas.api.select('s-000003');
+  assert.ok(!classesOf(first).includes('is-active') && classesOf(second).includes('is-active'));
+  canvas.api.select('b-000002');
+  assert.ok(!classesOf(first).includes('is-active') && !classesOf(second).includes('is-active'), 'a chosen block shows no section chrome');
+
+  press(second.querySelector('[data-ui-section-act="duplicate"]'));
+  press(first.querySelector('[data-ui-section-act="move_up"]'));
+  press(first.querySelector('[data-ui-add-section-at]').firstChild);
+  press(second.querySelector('[data-ui-add]'));
+  assert.deepEqual(actions, [{ sectionId: 's-000003', action: 'duplicate' }], 'a disabled button reports nothing');
+  assert.deepEqual(adds, [{ index: 0 }]);
+  assert.deepEqual(cells, [{ sectionId: 's-000003', cellIndex: 0 }]);
+
+  await canvas.api.render(JSON.stringify(page), { editable: false });
+  assert.equal(root.querySelectorAll('[data-ui-chrome]').length, 0, 'read only: no chrome');
+  // A page it can't read: a note, and nothing kept for the next render.
+  await canvas.api.render('{not json');
+  assert.equal(root.querySelectorAll('[data-ui-node]').length, 0);
+  assert.equal(canvas.cache.blocks.size, 0);
 });
 

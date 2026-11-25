@@ -1,12 +1,18 @@
 // The canvas (DESIGN §7.4): runs inside the editor's same-origin iframe at /ui-builder/canvas/ and
-// draws the page the editor sends it. window.OCSUiCanvas = {nonce, render, select, scrollTo,
-// onSelect, onHover, onAddRequest, onSectionAction, onAddSection, onKey}. Each section gets the
-// Studio's hover toolbar (Edit, Move up, Move down, Duplicate, Remove) and an Add section pill
-// above it, with one more after the last section. It keeps no state the editor can't resend: every
-// render gets the whole page as a JSON string, parsed here in this window's own realm. Blocks
-// whose JSON didn't change keep their DOM (no image flicker, scroll stays). Live blocks show
-// design samples; only "Data from your API" reads anything, and only with "Real data while
-// editing" on. Links and buttons in the page never act: a click selects what was clicked.
+// draws the page the editor sends it. It is four objects:
+// - BuilderCanvas, the canvas itself: draws each page the editor sends, marks the selection and
+//   the part under the pointer, and reports clicks, hovers and keys. Its frozen api is
+//   window.OCSUiCanvas = {nonce, render, select, scrollTo, onSelect, onHover, onAddRequest,
+//   onSectionAction, onAddSection, onKey}.
+// - SectionChrome, the Studio's chrome on the drawn page: each section's toolbar (Edit, Move up,
+//   Move down, Duplicate, Remove) and an Add section pill above it, with one more after the last
+//   section, add buttons in empty cells and a label on hidden parts.
+// - BlockCache: blocks whose JSON didn't change keep their DOM (no image flicker, scroll stays).
+// - RealDataPreview: live blocks show design samples; only "Data from your API" reads anything,
+//   and only with "Real data while editing" on.
+// The canvas keeps no state the editor can't resend: every render gets the whole page as a JSON
+// string, parsed here in this window's own realm. Links and buttons in the page never act: a
+// click selects what was clicked.
 import { readRegistry, textOf } from './registry.js';
 import { renderPage } from './render.js';
 import { contentRenderers } from './blocks-content.js';
@@ -322,200 +328,235 @@ export class RealDataPreview {
   }
 }
 
-export function readNonce(search) {
-  const nonce = new URLSearchParams(String(search || '')).get('nonce');
-  return nonce && NONCE.test(nonce) ? nonce : null;
-}
-
-// Only under a parent window of this same origin: anywhere else the canvas would hand its API to
-// a page it doesn't know. Reading a cross-origin parent's location throws.
-export function canvasAllowed(win) {
-  try {
-    return Boolean(win) && win.parent !== win && win.parent.location.origin === win.location.origin;
-  } catch (_) {
-    return false;
+export class BuilderCanvas {
+  static readNonce(search) {
+    const nonce = new URLSearchParams(String(search || '')).get('nonce');
+    return nonce && NONCE.test(nonce) ? nonce : null;
   }
-}
 
-// The part of the page a key was pressed in, sent with the key so Delete or a move acts on what
-// has focus: the id of the block or section around the focused element, '' on an add button or
-// an Add section pill
-// (no part to act on) and null when nothing in the page has focus (the editor's selection then).
-export function keyPartOf(target) {
-  if (!target || target.nodeType !== 1) return null;
-  if (target.closest('[data-ui-add], [data-ui-add-section-at]')) return '';
-  const node = target.closest('[data-ui-node]');
-  return node ? node.getAttribute('data-ui-node') : null;
-}
-
-export function startCanvas({ root, richText, baseurl = '', win = globalThis.window, doc = globalThis.document } = {}) {
-  if (!root) throw new Error('UI Builder canvas: root is required');
-  const registry = readRegistry(doc);
-  const say = (key, vars) => textOf(registry, `editor.${key}`, vars);
-  const nonce = readNonce(win.location.search);
-  if (!nonce || !canvasAllowed(win)) {
-    notice(doc, root, say('canvas_only'));
-    return null;
+  // Only under a parent window of this same origin: anywhere else the canvas would hand its API
+  // to a page it doesn't know. Reading a cross-origin parent's location throws.
+  static canvasAllowed(win) {
+    try {
+      return Boolean(win) && win.parent !== win && win.parent.location.origin === win.location.origin;
+    } catch (_) {
+      return false;
+    }
   }
-  const pageOrigin = win.location.origin;
-  const limits = registry.limits || {};
-  const hooks = createRichHooks({ richText, baseurl, pageOrigin, doc });
-  const ctx = { registry, mode: 'canvas', baseurl, pageOrigin, renderers: contentRenderers };
-  const handlers = { select: null, hover: null, add: null, key: null, sectionAction: null, addSection: null };
-  const chrome = new SectionChrome({ doc, say });
-  const cache = new BlockCache();
-  let page = null;
-  let realData = false;
-  const real = new RealDataPreview({ ctx, doc, win, say, limits, view: () => ({ page, cache, on: realData }) });
-  const emit = (name, value) => {
-    const fn = handlers[name];
+
+  // The part of the page a key was pressed in, sent with the key so Delete or a move acts on what
+  // has focus: the id of the block or section around the focused element, '' on an add button or
+  // an Add section pill (no part to act on) and null when nothing in the page has focus (the
+  // editor's selection then).
+  static keyPartOf(target) {
+    if (!target || target.nodeType !== 1) return null;
+    if (target.closest('[data-ui-add], [data-ui-add-section-at]')) return '';
+    const node = target.closest('[data-ui-node]');
+    return node ? node.getAttribute('data-ui-node') : null;
+  }
+
+  // The canvas page's start (pages/canvas.md): under the editor's frame, a canvas that listens
+  // and has told the editor it is there; anywhere else only a note, and null.
+  static start({ root, richText, baseurl = '', win = globalThis.window, doc = globalThis.document } = {}) {
+    if (!root) throw new Error('UI Builder canvas: root is required');
+    const registry = readRegistry(doc);
+    const nonce = BuilderCanvas.readNonce(win.location.search);
+    if (!nonce || !BuilderCanvas.canvasAllowed(win)) {
+      notice(doc, root, textOf(registry, 'editor.canvas_only'));
+      return null;
+    }
+    const canvas = new BuilderCanvas({ root, registry, nonce, richText, baseurl, win, doc });
+    canvas.listen();
+    canvas.announce();
+    return canvas;
+  }
+
+  constructor({ root, registry, nonce, richText, baseurl = '', win = globalThis.window, doc = globalThis.document }) {
+    this.root = root;
+    this.registry = registry;
+    this.nonce = nonce;
+    this.win = win;
+    this.doc = doc;
+    this.say = (key, vars) => textOf(registry, `editor.${key}`, vars);
+    this.limits = registry.limits || {};
+    const pageOrigin = win.location.origin;
+    this.hooks = createRichHooks({ richText, baseurl, pageOrigin, doc });
+    this.ctx = { registry, mode: 'canvas', baseurl, pageOrigin, renderers: contentRenderers };
+    this.handlers = { select: null, hover: null, add: null, key: null, sectionAction: null, addSection: null };
+    this.chrome = new SectionChrome({ doc, say: this.say });
+    this.cache = new BlockCache();
+    this.real = new RealDataPreview({
+      ctx: this.ctx, doc, win, say: this.say, limits: this.limits,
+      view: () => ({ page: this.page, cache: this.cache, on: this.realData }),
+    });
+    this.page = null;
+    this.realData = false;
+    this.selectedId = null;
+    this.hoverId = null;
+    this.mac = isMacPlatform(win.navigator);
+    // All the editor gets: these, bound to this canvas, frozen so neither side can swap one.
+    this.api = Object.freeze({
+      nonce,
+      render: (specJson, options) => this.render(specJson, options),
+      select: (id) => this.select(id),
+      scrollTo: (id) => this.scrollTo(id),
+      onSelect: (fn) => this.on('select', fn),
+      onHover: (fn) => this.on('hover', fn),
+      onAddRequest: (fn) => this.on('add', fn),
+      onSectionAction: (fn) => this.on('sectionAction', fn),
+      onAddSection: (fn) => this.on('addSection', fn),
+      onKey: (fn) => this.on('key', fn),
+    });
+  }
+
+  on(name, fn) {
+    this.handlers[name] = fn;
+  }
+
+  emit(name, value) {
+    const fn = this.handlers[name];
     if (typeof fn !== 'function') return;
     try {
       fn(value);
     } catch (error) {
       console.error('UI Builder canvas: the editor callback failed', error);
     }
-  };
-  let selectedId = null;
-  let hoverId = null;
+  }
 
-  function mark(attribute, id) {
-    for (const element of root.querySelectorAll(`[${attribute}]`)) element.removeAttribute(attribute);
-    if (!id) return null;
-    const element = [...root.querySelectorAll('[data-ui-node]')].find((node) => node.getAttribute('data-ui-node') === id);
+  find(id) {
+    if (typeof id !== 'string' || !id) return null;
+    return [...this.root.querySelectorAll('[data-ui-node]')].find((node) => node.getAttribute('data-ui-node') === id) || null;
+  }
+
+  // Moves an attribute (data-ui-selected, data-ui-hover) to the part with this id, if any.
+  mark(attribute, id) {
+    for (const element of this.root.querySelectorAll(`[${attribute}]`)) element.removeAttribute(attribute);
+    const element = this.find(id);
     if (element) element.setAttribute(attribute, '');
-    return element || null;
+    return element;
   }
 
   // The chosen part is outlined; a chosen section also shows its toolbar and pill (is-active on
   // its ocs__float-host).
-  function showSelection() {
-    const element = mark('data-ui-selected', selectedId);
-    for (const section of root.querySelectorAll('[data-ui-kind="section"]')) setClass(section, 'is-active', section === element);
+  showSelection() {
+    const element = this.mark('data-ui-selected', this.selectedId);
+    for (const section of this.root.querySelectorAll('[data-ui-kind="section"]')) setClass(section, 'is-active', section === element);
   }
 
-  // The Studio's chrome (SectionChrome), then the selection and hover marks over it.
-  function decorate({ editable = true } = {}) {
-    chrome.decorate(root, { editable });
-    showSelection();
-    mark('data-ui-hover', hoverId);
+  render(specJson, options = {}) {
+    let page;
+    try {
+      page = typeof specJson === 'string' ? JSON.parse(specJson) : null;
+    } catch (error) {
+      page = null;
+    }
+    if (!isObject(page)) return this.fail(this.say('canvas_bad_page', { message: 'JSON' }));
+    const realData = own(options, 'realData') === true;
+    if (realData && !this.realData) this.real.restart();
+    this.selectedId = typeof own(options, 'selectedId') === 'string' ? options.selectedId : null;
+    const key = BlockCache.contextKey(page, realData);
+    const hashes = BlockCache.nodeHashes(page);
+    let fresh;
+    try {
+      fresh = toDOM(renderPage(page, this.ctx), { doc: this.doc, renderRich: this.hooks.renderRich });
+    } catch (error) {
+      console.error('UI Builder canvas: the page could not be drawn', error);
+      return this.fail(this.say('canvas_bad_page', { message: error && error.message ? error.message : '' }));
+    }
+    this.cache.reuse(fresh, key, hashes);
+    const scroller = this.doc.scrollingElement || this.doc.documentElement;
+    const top = scroller.scrollTop;
+    this.root.replaceChildren(fresh);
+    scroller.scrollTop = top;
+    this.cache.remember(this.root, key, hashes);
+    this.page = page;
+    this.realData = realData;
+    this.chrome.decorate(this.root, { editable: own(options, 'editable') !== false });
+    this.showSelection();
+    this.mark('data-ui-hover', this.hoverId);
+    if (realData) this.real.paint();
+    return Promise.resolve();
   }
 
   // A page the renderer can't read at all (blocks have their own error boundaries): a note
   // instead, and nothing kept for the next render.
-  function fail(text) {
-    notice(doc, root, text);
-    cache.clear();
-    page = null;
+  fail(text) {
+    notice(this.doc, this.root, text);
+    this.cache.clear();
+    this.page = null;
     return Promise.resolve();
   }
 
-  function render(specJson, options = {}) {
-    let next;
-    try {
-      next = typeof specJson === 'string' ? JSON.parse(specJson) : null;
-    } catch (error) {
-      next = null;
-    }
-    if (!isObject(next)) return fail(say('canvas_bad_page', { message: 'JSON' }));
-    const wantReal = own(options, 'realData') === true;
-    if (wantReal && !realData) real.restart(); // switching on reads the APIs again
-    selectedId = typeof own(options, 'selectedId') === 'string' ? options.selectedId : null;
-    const key = BlockCache.contextKey(next, wantReal);
-    const hashes = BlockCache.nodeHashes(next);
-    let fresh;
-    try {
-      fresh = toDOM(renderPage(next, ctx), { doc, renderRich: hooks.renderRich });
-    } catch (error) {
-      console.error('UI Builder canvas: the page could not be drawn', error);
-      return fail(say('canvas_bad_page', { message: error && error.message ? error.message : '' }));
-    }
-    cache.reuse(fresh, key, hashes);
-    const scroller = doc.scrollingElement || doc.documentElement;
-    const top = scroller.scrollTop;
-    root.replaceChildren(fresh);
-    scroller.scrollTop = top;
-    cache.remember(root, key, hashes);
-    page = next;
-    realData = wantReal;
-    // Read only (someone else holds the page): no toolbars or add buttons that would do nothing.
-    decorate({ editable: own(options, 'editable') !== false });
-    if (realData) real.paint();
-    return Promise.resolve();
+  select(id) {
+    this.selectedId = typeof id === 'string' && id ? id : null;
+    this.showSelection();
   }
 
-  function onClick(event) {
+  scrollTo(id) {
+    const element = this.find(id);
+    const reduceMotion = Boolean(this.win.matchMedia && this.win.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    if (element) element.scrollIntoView({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' });
+  }
+
+  handleClick(event) {
     event.preventDefault();
     event.stopPropagation();
     const target = event.target && event.target.nodeType === 1 ? event.target : event.target && event.target.parentElement;
     const sectionAct = target && target.closest('[data-ui-section-act]');
     if (sectionAct) {
-      if (!sectionAct.disabled) emit('sectionAction', { sectionId: sectionAct.getAttribute('data-ui-section'), action: sectionAct.getAttribute('data-ui-section-act') });
+      if (!sectionAct.disabled) this.emit('sectionAction', { sectionId: sectionAct.getAttribute('data-ui-section'), action: sectionAct.getAttribute('data-ui-section-act') });
       return;
     }
     const addAt = target && target.closest('[data-ui-add-section-at]');
     if (addAt) {
-      emit('addSection', { index: Number(addAt.getAttribute('data-ui-add-section-at')) });
+      this.emit('addSection', { index: Number(addAt.getAttribute('data-ui-add-section-at')) });
       return;
     }
     const add = target && target.closest('[data-ui-add]');
     if (add) {
-      emit('add', { sectionId: add.getAttribute('data-ui-add-section'), cellIndex: Number(add.getAttribute('data-ui-add-cell')) || 0 });
+      this.emit('add', { sectionId: add.getAttribute('data-ui-add-section'), cellIndex: Number(add.getAttribute('data-ui-add-cell')) || 0 });
       return;
     }
     const node = closestNode(target);
-    emit('select', node ? node.getAttribute('data-ui-node') : null);
+    this.emit('select', node ? node.getAttribute('data-ui-node') : null);
   }
 
-  function onOver(event) {
+  handleOver(event) {
     const node = closestNode(event.target);
     const id = node ? node.getAttribute('data-ui-node') : null;
-    if (id === hoverId) return;
-    hoverId = id;
-    mark('data-ui-hover', hoverId);
-    emit('hover', hoverId);
+    if (id === this.hoverId) return;
+    this.hoverId = id;
+    this.mark('data-ui-hover', id);
+    this.emit('hover', id);
   }
 
-  const mac = isMacPlatform(win.navigator);
-  function onKey(event) {
+  handleKey(event) {
     if (isTypingTarget(event.target)) return;
-    if (!shortcutOf(event, { mac })) return;
+    if (!shortcutOf(event, { mac: this.mac })) return;
     // The editor runs the shortcut; nothing in the canvas (or a site script) may act on it too.
     event.preventDefault();
     event.stopPropagation();
-    emit('key', { ...keyEventOf(event), nodeId: keyPartOf(event.target) });
+    this.emit('key', { ...keyEventOf(event), nodeId: BuilderCanvas.keyPartOf(event.target) });
   }
 
-  const stop = (event) => event.preventDefault();
-  doc.addEventListener('click', onClick, true);
-  doc.addEventListener('auxclick', stop, true);
-  doc.addEventListener('dragstart', stop, true);
-  doc.addEventListener('submit', stop, true);
-  doc.addEventListener('mouseover', onOver, true);
-  doc.documentElement.addEventListener('mouseleave', () => onOver({ target: null }));
-  win.addEventListener('keydown', onKey, true);
+  // Listens on the whole document in the capture phase, so nothing in the page (or a site
+  // script) acts on a click, a drag, a submit or a shortcut first.
+  listen() {
+    const { doc, win } = this;
+    const stop = (event) => event.preventDefault();
+    doc.addEventListener('click', (event) => this.handleClick(event), true);
+    doc.addEventListener('auxclick', stop, true);
+    doc.addEventListener('dragstart', stop, true);
+    doc.addEventListener('submit', stop, true);
+    doc.addEventListener('mouseover', (event) => this.handleOver(event), true);
+    doc.documentElement.addEventListener('mouseleave', () => this.handleOver({ target: null }));
+    win.addEventListener('keydown', (event) => this.handleKey(event), true);
+  }
 
-  const reduceMotion = () => Boolean(win.matchMedia && win.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  const api = Object.freeze({
-    nonce,
-    render,
-    select(id) {
-      selectedId = typeof id === 'string' && id ? id : null;
-      showSelection();
-    },
-    scrollTo(id) {
-      const element = typeof id === 'string' ? [...root.querySelectorAll('[data-ui-node]')].find((node) => node.getAttribute('data-ui-node') === id) : null;
-      if (element) element.scrollIntoView({ block: 'nearest', behavior: reduceMotion() ? 'auto' : 'smooth' });
-    },
-    onSelect(fn) { handlers.select = fn; },
-    onHover(fn) { handlers.hover = fn; },
-    onAddRequest(fn) { handlers.add = fn; },
-    onSectionAction(fn) { handlers.sectionAction = fn; },
-    onAddSection(fn) { handlers.addSection = fn; },
-    onKey(fn) { handlers.key = fn; },
-  });
-  win.OCSUiCanvas = api;
-  const parent = win.parent;
-  parent.dispatchEvent(new parent.CustomEvent(READY_EVENT, { detail: { nonce, canvas: api } }));
-  return api;
+  // Hands the api to the editor: on this window, and in a ready event on the editor's window.
+  announce() {
+    this.win.OCSUiCanvas = this.api;
+    const parent = this.win.parent;
+    parent.dispatchEvent(new parent.CustomEvent(READY_EVENT, { detail: { nonce: this.nonce, canvas: this.api } }));
+  }
 }
