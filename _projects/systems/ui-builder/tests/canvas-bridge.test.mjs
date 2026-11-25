@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { READY_EVENT, canvasUrl, createCanvasBridge, makeNonce, waitForCanvas } from '../js/canvas-bridge.js';
+import { CanvasBridge, READY_EVENT } from '../js/canvas-bridge.js';
+
+const { canvasUrl, makeNonce, waitForCanvas } = CanvasBridge;
 
 const NONCE = '0123456789abcdef0123456789abcdef';
 
@@ -71,7 +73,7 @@ test('the bridge handshakes on every load and re-sends the last render and selec
   const iframe = { contentWindow: {}, addEventListener: (type, fn) => { listeners[type] = fn; }, removeEventListener: () => {}, src: '' };
   const selected = [];
   const statuses = [];
-  const bridge = createCanvasBridge({ iframe, baseurl: '', win, nonceOf: () => NONCE, onSelect: (id) => selected.push(id), onStatus: (status) => statuses.push(status) });
+  const bridge = new CanvasBridge({ iframe, baseurl: '', win, nonceOf: () => NONCE, onSelect: (id) => selected.push(id), onStatus: (status) => statuses.push(status) });
   assert.equal(iframe.src, `/ui-builder/canvas/?nonce=${NONCE}`);
   bridge.render({ v: 1 }, { realData: true });
   bridge.select('b-000001');
@@ -103,7 +105,7 @@ test('section toolbar actions and Add section pills reach the editor only when w
   const iframe = { contentWindow: {}, addEventListener: (type, fn) => { listeners[type] = fn; }, removeEventListener: () => {}, src: '' };
   const actions = [];
   const adds = [];
-  const bridge = createCanvasBridge({ iframe, win, nonceOf: () => NONCE, onSectionAction: (request) => actions.push(request), onAddSection: (request) => adds.push(request) });
+  const bridge = new CanvasBridge({ iframe, win, nonceOf: () => NONCE, onSectionAction: (request) => actions.push(request), onAddSection: (request) => adds.push(request) });
   const { canvas } = fakeCanvas();
   canvas.onSectionAction = (fn) => { canvas.sectionFn = fn; };
   canvas.onAddSection = (fn) => { canvas.addSectionFn = fn; };

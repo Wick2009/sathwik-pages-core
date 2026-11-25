@@ -10,7 +10,7 @@ import { defOf } from './registry.js';
 import { createHistory } from './history.js';
 import { pageToJSON } from './export.js';
 import { suggestSlug } from './url-rules.js';
-import { createCanvasBridge } from './canvas-bridge.js';
+import { CanvasBridge } from './canvas-bridge.js';
 import { createShortcuts, isMacPlatform } from './editor-shortcuts.js';
 import { createOutline } from './editor-outline.js';
 import { createInspector } from './editor-inspector.js';
@@ -107,7 +107,7 @@ export class EditSession {
     this.codeView = createCodeView({ doc, registry: this.registry, say, onSelect: (id) => this.select(id, { from: 'code' }) });
     shell.codePane.append(this.codeView.element);
     this.lease = createLeaseBanner(shell.banners, { doc, say, onTakeOver: () => this.takeOver() });
-    this.bridge = createCanvasBridge({
+    this.bridge = new CanvasBridge({
       iframe: shell.iframe, baseurl: this.app.baseurl, win: this.win,
       onSelect: (id) => this.select(id, { from: 'canvas' }), onAddRequest: (target) => this.openPalette(target),
       onSectionAction: ({ sectionId, action }) => (action === 'edit' ? this.editNode(sectionId) : this.nodeAction(action, sectionId)),
